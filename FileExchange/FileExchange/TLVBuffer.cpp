@@ -1,0 +1,70 @@
+﻿#include "TLVBuffer.h"
+
+TLVBuffer::TLVBuffer()
+{
+	// Khởi tạo mảng rỗng, độ dài 0
+	memset(buff, 0, sizeof(buff));
+	buffLen = 0;
+}
+
+TLVPackage TLVBuffer::getPackage()
+{
+	TLVPackage p(-1,13, (char*)"NULL");
+	
+	// Kiểm tra độ dài của luồng dữ liệu để xác nhận nó có là một TLV package hay không
+	if (buffLen < 8) {
+		return p;
+	}
+	else {
+		// Đọc các giá trị title, length
+		char Title[4];
+		char Length[4];
+		char Value[1016];
+		memcpy(Title, buff, 4);
+		memcpy(Length, buff+4, 4);
+		int length = Common::byteToInt(Length);
+		int title = Common::byteToInt(Title);
+		
+		// Trả về NULL nếu dữ liệu trong buff không bằng độ dài của TLVPackage đang xét
+		if (buffLen < length) {
+			return p;
+		}
+		else {
+			// Khởi tạo đối tượng TLVPackage
+			memcpy(Value, buff + 8, length - 8);
+			TLVPackage package(title, length, Value);
+			
+			// Dịch các dữ liệu còn lại trong package về đầu
+			memcpy(buff, buff + length, buffLen - length);
+			memset(buff + buffLen - length, 0, length);
+			
+			// Sửa lại độ dài package
+			buffLen -= length;
+
+			return package ;
+		}
+	}
+
+}
+
+void TLVBuffer::addData(char* data, int len)
+{
+	// Thêm dữ liệu vào cuối buff
+	memcpy(buff + buffLen, data, len);
+	
+	//Sửa lại độ dài
+	buffLen += len;
+}
+
+//int main() {
+//	TLVBuffer buff;
+//	TLVPackage pack(1, 16, (char*)"HelloHD");
+//	TLVPackage pack2(1, 20, (char*)"Hello World");
+//	buff.addData(pack.packageValue(), pack.getLength());
+//	buff.addData(pack2.packageValue(), 10);
+//	char a[10];
+//	memcpy(a, pack2.packageValue()+10, 10);
+//	buff.addData(a, 10);
+//	TLVPackage p = buff.getPackage();
+//	p = buff.getPackage();
+//}

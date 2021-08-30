@@ -1,0 +1,2 @@
+Sử dụng 2 biến isFull và isEmpty để thông báo trạng thái của message queue. khi message queue đầy thì Producer dừng sản xuất. 
+Khi message queue trống thì consumer dừng tiêu thụ. 

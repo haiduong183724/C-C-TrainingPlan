@@ -1,0 +1,3 @@
+PORT 8888
+ADDRESS 192.168.0.101
+CLIENT_LOCATE C:\Users\Admin\source\repos\FileExchangeClient\FileExchangeClient\ClientRepo

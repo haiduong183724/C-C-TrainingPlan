@@ -1,0 +1,8 @@
+1 triệu pử: 	1 thread: 2,72s
+		4 thread: 1.71s
+		8 thread: 1.85s
+		16 thread: 2.467s
+2 tr 		1 thread:
+		4 thread:
+		8 thread:3.66
+		16 thread:4.905

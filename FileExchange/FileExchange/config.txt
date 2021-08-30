@@ -1,0 +1,3 @@
+SERVER_LOCATE C:\Users\Admin\source\repos\C-C-Trainning-Plan\FileExchangeServer\FileExchangeServer\FILEREPO
+PORT 8888
+MAX_CLIENT 1024
