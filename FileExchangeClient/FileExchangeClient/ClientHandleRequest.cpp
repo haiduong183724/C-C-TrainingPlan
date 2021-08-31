@@ -7,7 +7,7 @@ ClientHandleRequest::ClientHandleRequest(SOCKET clientS, const char* Path)
 	memset(path, 0, sizeof(path));
 	s = clientS;
 	strcat(path, Path);
-	c = new Client(s);
+	c = new FileHandle(s);
 }
 
 void ClientHandleRequest::handleResponse(char* response)

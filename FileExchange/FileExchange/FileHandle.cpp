@@ -1,16 +1,16 @@
-﻿#include "ServerAPI.h"
+﻿#include "FileHandle.h"
 #include<iostream>
 #include <WinSock2.h>
 #include<fstream>
 #include "TLVPackage.h"
 using namespace std;
 
-ServerAPI::ServerAPI( SOCKET c)
+FileHandle::FileHandle( SOCKET c)
 {
 	s = c;
 }
 
-void ServerAPI::sendFile(const char* fileName)
+void FileHandle::sendFile(const char* fileName)
 {
 	fstream f;
 	f.open(fileName, ios::in | ios::binary);
@@ -49,7 +49,7 @@ void ServerAPI::sendFile(const char* fileName)
 }
 
 
-void ServerAPI::getFile(const char* fileName)
+void FileHandle::getFile(const char* fileName)
 {
 	// gửi yêu cầu nhận file, nội dung file
 	TLVPackage p(200, 11, (char*)"OK");
@@ -88,7 +88,7 @@ void ServerAPI::getFile(const char* fileName)
 	file.close();
 }
 //int main() {
-//	ServerAPI sAPI("C:\\Users\\Admin\\source\\repos\\FileExchangeServer\\FileExchangeServer");
+//	FileHandle sAPI("C:\\Users\\Admin\\source\\repos\\FileExchangeServer\\FileExchangeServer");
 //	ResultMsg msg = sAPI.readFile("input.txt");
 //	ResultMsg msg2 = sAPI.writeFile(msg.getContent().c_str(), "hello2.txt");
 //	char ch = cin.get();

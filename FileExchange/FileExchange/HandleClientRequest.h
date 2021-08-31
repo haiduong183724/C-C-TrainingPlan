@@ -2,14 +2,14 @@
 #ifndef HANDLECLIENTREQUEST_H
 #define HANDLECLIENTREQUEST_H
 #include"HandleRequest.h"
-#include"ServerAPI.h"
+#include"FileHandle.h"
 #include"Directory.h"
 #include"TLVPackage.h"
 #include<fstream>
 class HandleClientRequest:public HandleRequest
 {
 	SOCKET s;// SOCKET kết nối tới client
-	ServerAPI *sApi;// công cụ để ghi dữ liệu
+	FileHandle *sApi;// công cụ để ghi dữ liệu
 	Directory *path;// đường dẫn đến thư mục hiện tại
 	fstream f;// file ghi dữ liệu nhận được
 	// Inherited via HandleRq

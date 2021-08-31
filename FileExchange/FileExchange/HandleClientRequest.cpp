@@ -3,7 +3,7 @@
 HandleClientRequest::HandleClientRequest(SOCKET ClientSocket, const char* serverRepo)
 {
 	s = ClientSocket;
-	sApi = new ServerAPI(s);
+	sApi = new FileHandle(s);
 	if (strlen(serverRepo) == 0)
 		path = new Directory(SERVER_DEFAULT_REPO);
 	else

@@ -18,7 +18,7 @@
     <ClInclude Include="Directory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ServerAPI.h">
+    <ClInclude Include="FileHandle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="TLVBuffer.h">
@@ -41,7 +41,7 @@
     <ClCompile Include="TLVBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ServerAPI.cpp">
+    <ClCompile Include="FileHandle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="TLVPackage.cpp">

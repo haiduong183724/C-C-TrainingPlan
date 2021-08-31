@@ -4,7 +4,7 @@
 #include"SocketClient.h"
 #ifndef CLIENT_H
 #define CLIENT_H
-class Client:public SocketClient
+class FileHandle:public SocketClient
 {
 private:
 	SOCKET s;
@@ -14,7 +14,7 @@ public:
 	/// </summary>
 	/// <param name="path"> đường dẫ tới thư mục chứa của client</param>
 	/// <param name="s"> Socket kết nối tới server</param>
-	Client(SOCKET s);
+	FileHandle(SOCKET s);
 	/// <summary>
 	/// Nhận file từ server
 	/// </summary>

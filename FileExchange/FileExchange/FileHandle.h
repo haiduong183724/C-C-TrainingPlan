@@ -6,7 +6,7 @@
 /// <summary>
 /// chứa các giao tiếp với client
 /// </summary>
-class ServerAPI
+class FileHandle
 {
 protected:
 	SOCKET s;
@@ -14,7 +14,7 @@ protected:
 public:
 	void sendFile(const char* fileName);
 	void getFile(const char* fileName);
-	ServerAPI(SOCKET c);
+	FileHandle(SOCKET c);
 };
 #endif // !SERVERAPI_H
 

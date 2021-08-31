@@ -1,21 +1,44 @@
 ﻿#include<iostream>
 #include<WinSock2.h>
 #include<fstream>
+#include<io.h>
 #include"ClientHandleRequest.h"
 using namespace std;
 string addr, clientRepoPath;
 int port = 0;
+
+bool checkFileExist(char* fileName) {
+	char path[1024];
+	memset(path, 0, sizeof(path));
+	sprintf(path, "%s\\%s", clientRepoPath.c_str(), fileName);
+	return (_access(path, 0));
+}
 void makeRequest(SOCKET clientS) {
 	char request[1024];
 	while(1){
 		cout << "please enter your request" << endl;
 		memset(request, 0, sizeof(request));
 		cin.getline(request, sizeof(request));
-		if (request[0] == 'C'|| request[0] == 'D' || request[0] == 'G' || request[0] == 'S' 
-			|| request[0] == 'c'|| request[0] == 'd' || request[0] == 'g' || request[0] == 's') {
+		// kiểm tra request
+		if (request[0] == 'C'|| request[0] == 'D' || request[0] == 'G' 
+			|| request[0] == 'c'|| request[0] == 'd' || request[0] == 'g') {
+
 			TLVPackage p(101, strlen(request) + 8, request);
 			send(clientS, p.packageValue(), p.getLength(), 0);
 			break;
+		}
+		// Nếu là gửi file, kiểm tra file có tồn tại hay không
+		else if (request[0] == 'S' || request[0] == 's') {
+			char rq[1024]{ 0 }, ctn[1024]{ 0 };
+			sscanf(request, "%s%s", rq, ctn);
+			if (checkFileExist(ctn)) {
+				cout << "file is'nt exist" << endl;
+			}
+			else {
+				TLVPackage p(101, strlen(request) + 8, request);
+				send(clientS, p.packageValue(), p.getLength(), 0);
+				break;
+			}
 		}
 		else {
 			cout << "your request is'nt valid" << endl;

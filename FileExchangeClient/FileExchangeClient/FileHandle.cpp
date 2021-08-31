@@ -1,14 +1,15 @@
-﻿#include "Client.h"
+﻿#include "FileHandle.h"
 #include<iostream>
 #include<fstream>
 #include "TLVPackage.h"
+#include<io.h>
 using namespace std;
-Client::Client( SOCKET c)
+FileHandle::FileHandle( SOCKET c)
 {
 	s = c;
 }
 
-void Client::getFile(const char* fileName)
+void FileHandle::getFile(const char* fileName)
 {
 	//char buffer[1024];
 	//memset(buffer, 0, sizeof(buffer));
@@ -54,11 +55,14 @@ void Client::getFile(const char* fileName)
 	//}
 }
 
-void Client::sendFile(const char* fileName)
+void FileHandle::sendFile(const char* fileName)
 {
 	fstream f;
 	// mở file
 	f.open(fileName, ios::in | ios::binary);
+	if (!_access(fileName, 0)){
+		cout << "file is'nt exits" << endl;
+	}
 	// Chuyển con trỏ file tới cuối file
 	f.seekg(0, ios::end);
 	// lấy độ dài của file

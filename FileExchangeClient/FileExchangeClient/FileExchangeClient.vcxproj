@@ -19,14 +19,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Client.cpp" />
+    <ClCompile Include="FileHandle.cpp" />
     <ClCompile Include="ClientHandleRequest.cpp" />
     <ClCompile Include="TCPClient.cpp" />
     <ClCompile Include="TLVBuffer.cpp" />
     <ClCompile Include="TLVPackage.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Client.h" />
+    <ClInclude Include="FileHandle.h" />
     <ClInclude Include="ClientHandleRequest.h" />
     <ClInclude Include="SocketClient.h" />
     <ClInclude Include="TLVBuffer.h" />

@@ -143,7 +143,7 @@
     <ClInclude Include="Directory.h" />
     <ClInclude Include="HandleClientRequest.h" />
     <ClInclude Include="HandleRequest.h" />
-    <ClInclude Include="ServerAPI.h" />
+    <ClInclude Include="FileHandle.h" />
     <ClInclude Include="TLVBuffer.h" />
     <ClInclude Include="TLVPackage.h" />
   </ItemGroup>
@@ -151,7 +151,7 @@
     <ClCompile Include="Directory.cpp" />
     <ClCompile Include="FileExchangeServer.cpp" />
     <ClCompile Include="HandleClientRequest.cpp" />
-    <ClCompile Include="ServerAPI.cpp" />
+    <ClCompile Include="FileHandle.cpp" />
     <ClCompile Include="TLVBuffer.cpp" />
     <ClCompile Include="TLVPackage.cpp" />
   </ItemGroup>

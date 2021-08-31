@@ -3,7 +3,7 @@
 #define CLIENTHANDLEREQUEST_H
 #include<WinSock2.h>
 #include<fstream>
-#include"Client.h"
+#include"FileHandle.h"
 using namespace std;
 class ClientHandleRequest
 {
@@ -11,7 +11,7 @@ private:
 	SOCKET s;
 	fstream f;
 	char path[1024];
-	Client* c;
+	FileHandle* c;
 public:
 	/// <summary>
 	/// Hàm khởi tạo
