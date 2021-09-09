@@ -1,0 +1,107 @@
+#include "Directory.h"
+
+
+
+Directory::Directory(const char* path)
+{
+	strcat(directoryPath, path);
+}
+
+char* Directory::getPath()
+{
+	return directoryPath;
+}
+
+void Directory::settingFile()
+{
+	WIN32_FIND_DATAA FindData;
+	char fullPath[1024];
+	listFile.clear();
+	memset(fullPath, 0, sizeof(fullPath));
+	sprintf(fullPath, "%s\\*.*", directoryPath);
+	HANDLE hFile = FindFirstFileA(fullPath, &FindData);
+	if (hFile != INVALID_HANDLE_VALUE) {
+		int num = 0;
+		while (FindNextFileA(hFile, &FindData)) {
+			char filePath[1024]{ 0 };
+			if (num > 0) {
+				sprintf(filePath, "%s\\%s", directoryPath, FindData.cFileName);
+				FileInfomation f(filePath);
+				listFile.push_back(f);
+			}
+			num++;
+		}
+	}
+}
+void Directory::traceFile()
+{
+	for (int i = 0; i < listFile.size(); i++) {
+		if (listFile[i].updateFile()) {
+			logFile(listFile[i], FILE_EDIT);
+		}
+	}
+}
+
+void Directory::checkFile(vector<FileInfomation> delList, vector<FileInfomation> addList)
+{
+	int i = 0;
+	while (i != delList.size() && !addList.empty()) {
+		bool isEq = false;
+		for (int j = 0; j < addList.size(); j++) {
+			if (delList[i] == addList[j]) {
+				delList.erase(delList.begin() + i);
+				addList.erase(addList.begin() + j);
+				isEq = true;
+			}
+		}
+		if (!isEq) {
+			i++;
+		}
+	}
+	for (int i = 0; i < delList.size(); i++) {
+		logFile(delList[i], FILE_DELETE);
+	}
+	for (int i = 0; i < addList.size(); i++) {
+		logFile(addList[i], FILE_ADD);
+	}
+}
+void Directory::traceDirectory()
+{
+	vector<FileInfomation> delList = listFile;
+	settingFile();
+	checkFile(delList, listFile);
+}
+void Directory::logFile(FileInfomation f, FileStatus fstatus)
+{
+	listFileChange.push_back(make_pair(f, fstatus));
+	/*switch (fstatus)
+	{
+	case FILE_DELETE: 
+	{
+		
+		break;
+	}
+	case FILE_ADD:
+	{
+		printf("file %s has been added\n", f.getFileName());
+		break;
+	}
+	case FILE_EDIT:
+	{
+		printf("file %s has changed\n", f.getFileName());
+		break;
+	}
+	default:
+		break;
+	}*/
+}
+//#include<iostream>
+//int main() {
+//	Directory d("Debug");
+//	while (true) {
+//		d.traceDirectory();
+//		d.traceFile();
+//		Sleep(50);
+//	}
+//	return 0;
+//}
