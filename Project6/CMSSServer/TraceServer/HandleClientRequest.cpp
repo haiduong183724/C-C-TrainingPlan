@@ -37,10 +37,10 @@ Client HandleClientRequest::getClient(int clientId)
 
 void HandleClientRequest::HandlePacket(TLVPackage p)
 {
-	if (p.getTitle() == 100) {
+	if (p.getTitle() == 100) {// title = 100 => gói tin nghiệp vụ
 		HandleRequest(p.getValue(), p.getId());
 	}
-	else {
+	else if(p.getTitle() == 0 || p.getTitle() == 1) {// title = 0 hoặc 1 => gói tin chứa dữ liệu
 		HandleData(p, p.getId());
 	}
 }
@@ -48,6 +48,7 @@ void HandleClientRequest::HandlePacket(TLVPackage p)
 void HandleClientRequest::HandleRequest(char* rq, int from)
 {
 	char request[1024]{ 0 }, ctn[1024]{ 0 };
+	// tách request để lấy được yêu vầu
 	sscanf(rq, "%s%s", request, ctn);
 	char log[1024]{ 0 };
 	DateTime d = DateTime::Now();
@@ -55,29 +56,30 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 		d.year, d.month, d.day, d.hour, d.minute, d.second, rq);
 	fstream f;
 	f.open((char*)"log.txt", ios::out | ios::app);
+	// ghi lại các chỉnh sửa để theo dõi
 	f.write(log, strlen(log));
 
 	switch (request[0])
 	{
-	case 'D':
+	case 'D':// DELETE 
 	{
 		Delete(ctn, from);
 		break;
 	}
-	case 'E':
+	case 'E':// EDIT
 	{
 		state = true;
 		Edit(ctn, from);
 		break;
 	}
-	case 'A':
+	case 'A'://ADD
 	{
 		state = true;
 		cout << 1 << endl;
 		Add(ctn, from);
 		break;
 	}
-	case 'R':
+	case 'R'://RENAME
 	{
 		Rename(rq+strlen(request) +1, from);
 		break;
@@ -89,6 +91,7 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 
 void HandleClientRequest::HandleData(TLVPackage p, int from)
 {
+	// chuyển tiếp dữ liệu này cho các client khác 
 	vector<Client> Clients = clients;
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
@@ -106,6 +109,7 @@ void HandleClientRequest::HandleData(TLVPackage p, int from)
 
 void HandleClientRequest::Delete(char* filePath, int from)
 {
+	// gửi yêu cầu xóa file đến cho các client khác
 	vector<Client> Clients = clients;
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
@@ -140,9 +144,11 @@ void HandleClientRequest::Add(char* filePath, int from)
 
 void HandleClientRequest::Rename(char* filePath, int from)
 {
+	// tách lấy nội dung tên file cũ và tên file đổi
 	vector<Client> Clients = clients;
 	char oldName[1024]{ 0 }, newName[1024]{ 0 };
 	sscanf(filePath, "%s %s", oldName, newName);
+	// gửi yêu cầu đổi tên cho các client khác
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
@@ -155,6 +161,7 @@ void HandleClientRequest::Rename(char* filePath, int from)
 
 void HandleClientRequest::Edit(char* filePath, int from)
 {
+	// thông báo cho các client khác mở file để nhận dữ liệu
 	vector<Client> Clients = clients;
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
@@ -164,6 +171,7 @@ void HandleClientRequest::Edit(char* filePath, int from)
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 		else {
+			// yêu cầu client from gửi nội dung file lên 
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s", "GET", filePath);
 			TLVPackage p(101, from, strlen(request) + 8, request);

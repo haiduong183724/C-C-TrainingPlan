@@ -1,7 +1,8 @@
-#include "FileInfomation.h"
+﻿#include "FileInfomation.h"
 
 FileInfomation::FileInfomation(const char* filePath)
 {
+    // tạo đối tượng handle chỉ tới file
     WIN32_FIND_DATAA FindData;
     HANDLE hFile = FindFirstFileA(filePath, &FindData);
     if (hFile != INVALID_HANDLE_VALUE) {
@@ -10,6 +11,7 @@ FileInfomation::FileInfomation(const char* filePath)
         strcat(fileName, FindData.cFileName);
         // update file info
         SYSTEMTIME st;
+        // cập nhật thời gian chỉnh sửa và thời gian khởi tạo
         FileTimeToSystemTime(&(FindData.ftLastWriteTime), &st);
         modifiedDate.setDate(st);
         FileTimeToSystemTime(&(FindData.ftCreationTime), &st);
@@ -29,8 +31,9 @@ bool FileInfomation::updateFile()
         if (newDate == modifiedDate) {
             return false;
         }
-        return true;
+        // nếu thời gian chỉnh sửa bị thay đổi => đã có sự chỉnh sửa trong file
         modifiedDate.setDate(st);
+        return true;
     }
     return false;
 }

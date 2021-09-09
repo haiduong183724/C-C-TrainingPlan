@@ -60,8 +60,8 @@ void monitorDirectory(Directory* d)
 	cout << "start follow" <<d->getPath()<< endl;
 	while (1) {
 		m.lock();
-		d->traceDirectory();
-		d->traceFile();
+		d->traceDirectory();// kiểm tra trạng thái thư mục
+		d->traceFile();// kiểm tra trạng thái các file
 		m.unlock();
 		Sleep(50);
 	}
@@ -75,9 +75,12 @@ int main() {
 	WSAStartup(MAKEWORD(2, 2), &DATA);
 	HANDLE hMutex = CreateMutexA(NULL, false, NULL);
 	SOCKET s = createSocket((char*)addr.c_str(), port);
+	// khởi tạo thư mục cần giám sát
 	Directory d(clientRepoPath.c_str());
+	// tạo thread để giám sát thư mục
 	thread monitorThread(monitorDirectory, &d);
 	int id = -1;
+	// tạo thread để gửi các thay đổi tới server
 	thread getChangeThread(ReportChange(), &d,s, &hMutex, &id);
 	ClientHandleRequest hRequest(s, clientRepoPath.c_str());
 	TLVBuffer TLVBuff;
@@ -100,12 +103,15 @@ int main() {
 				SetEvent(ValidatedEvent);
 				hRequest.handleResponse(p.getValue());
 			}
+			// gói tin thông báo
 			if (p.getTitle() == 100) {
 				hRequest.handleResponse(p.getValue());
 			}
+			// gói tin nghiệp vụ
 			else if (p.getTitle() == 101) {
 				hRequest.handleResponse2(p.getValue());
 			}
+			// gói tin dữ liệu
 			else {
 				hRequest.handleData(p.getValue(), p.getLength() - 8);
 				if (p.getTitle() == 0) {

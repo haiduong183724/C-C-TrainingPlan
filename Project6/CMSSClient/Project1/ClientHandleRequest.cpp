@@ -71,6 +71,7 @@ void ClientHandleRequest::login() {
 }
 void ClientHandleRequest::openFile(char* fileName)
 {
+	// mở file lên để ghi
 	char filePath[1024];
 	memset(filePath, 0, sizeof(filePath));
 	sprintf(filePath, "%s\\%s", path, fileName);
@@ -82,6 +83,7 @@ void ClientHandleRequest::openFile(char* fileName)
 
 void ClientHandleRequest::closeFile()
 {
+	// đóng file lại
 	if (f.is_open()) {
 		f.close();
 	}
