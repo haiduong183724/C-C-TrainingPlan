@@ -1,7 +1,7 @@
 ﻿#include "HandleClientRequest.h"
 #include <iostream>
-
-
+#include<fstream>
+#include"DateTime.h"
 HandleClientRequest::HandleClientRequest()
 {
 	hmutex = CreateMutexA(NULL, false, NULL);
@@ -49,6 +49,14 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 {
 	char request[1024]{ 0 }, ctn[1024]{ 0 };
 	sscanf(rq, "%s%s", request, ctn);
+	char log[1024]{ 0 };
+	DateTime d = DateTime::Now();
+	sprintf(log, "%d-%d-%d-%d-%d-%d: %s\n",
+		d.year, d.month, d.day, d.hour, d.minute, d.second, rq);
+	fstream f;
+	f.open((char*)"log.txt", ios::out | ios::app);
+	f.write(log, strlen(log));
+
 	switch (request[0])
 	{
 	case 'D':

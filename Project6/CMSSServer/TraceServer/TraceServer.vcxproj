@@ -141,6 +141,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Client.cpp" />
+    <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="HandleClientRequest.cpp" />
     <ClCompile Include="TLVBuffer.cpp" />
     <ClCompile Include="TLVPackage.cpp" />
@@ -148,6 +149,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client.h" />
+    <ClInclude Include="DateTime.h" />
     <ClInclude Include="HandleClientRequest.h" />
     <ClInclude Include="TLVBuffer.h" />
     <ClInclude Include="TLVPackage.h" />
