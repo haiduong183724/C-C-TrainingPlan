@@ -6,3 +6,6 @@
 gửi file: sendfile <space> fileName
 tải file từ server về: getfile<space> fileName
 di chuyển giữa các thư mục: cd tên thư mục
+
+NOTE:
+chương trình chưa hỗ trợ cho file có dấu space trong tên, tên file tiếng việt

@@ -1,0 +1,7 @@
+1: chuyền dữ liệu 
+0 dữ liệu cuối cùng
+100 giao tiếp thông thường
+101 các lệnh
+
+NOTE:
+chương trình chưa hỗ trợ cho file có dấu space trong tên, tên file tiếng việt
