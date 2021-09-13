@@ -9,7 +9,7 @@ private:
 	int id = 0;
 public:
 	void operator ()(Directory* d, SOCKET s, HANDLE* hMutex, int* Id);
-	void SendReport(FileInfomation fOld,FileInfomation fNew , FileStatus s);
+	int SendReport(FileInfomation fOld,FileInfomation fNew , FileStatus s);
 };
 #endif // !REPORTCHANGE_H
 

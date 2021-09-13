@@ -9,8 +9,8 @@ TLVBuffer::TLVBuffer()
 
 TLVPackage TLVBuffer::getPackage()
 {
-	TLVPackage p(-1, -1, 13, (char*)"NULL");
-
+	TLVPackage p;
+	p.setTitle(INVALID_MESSAGE);
 	// Kiểm tra độ dài của luồng dữ liệu để xác nhận nó có là một TLV package hay không
 	if (buffLen < 8) {
 		return p;

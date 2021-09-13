@@ -5,10 +5,11 @@
 /// <summary>
 /// Chứa các gói tin TLV 
 /// </summary>
+#define BUFFER_SIZE 50000
 class TLVBuffer
 {
 private:
-	char buff[100000];
+	char buff[BUFFER_SIZE];
 public:
 	int buffLen = 0;
 	/// <summary>
@@ -25,7 +26,22 @@ public:
 	/// </summary>
 	/// <param name="data">con trỏ luồng dữ liệu</param>
 	/// <param name="len">Số lượng byte</param>
-	void addData(char* data, int len);
+	bool addData(char* data, int len);
+	/// <summary>
+	/// lấy dữ liệu trong buffer
+	/// </summary>
+	/// <returns></returns>
+	char* getData();
+	/// <summary>
+	/// copy dữ liệu của một buffer này vào một buffer khác
+	/// </summary>
+	/// <param name="buf"></param>
+	/// <returns></returns>
+	bool addTLVBuffer(TLVBuffer buf);
+	/// <summary>
+	/// reset lại buffer
+	/// </summary>
+	void resetBuffer();
 };
 #endif // !TLVBUFFER_H
 

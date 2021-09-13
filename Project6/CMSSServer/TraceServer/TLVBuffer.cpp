@@ -3,13 +3,14 @@
 TLVBuffer::TLVBuffer()
 {
 	// Khởi tạo mảng rỗng, độ dài 0
-	memset(buff, 0, sizeof(buff));
-	buffLen = 0;
+	resetBuffer();
 }
 
 TLVPackage TLVBuffer::getPackage()
 {
-	TLVPackage p(-1,-1,13, (char*)"NULL");
+	const int MSG_TYPE_EMPTY = -1;
+	TLVPackage p;
+	p.setTitle(INVALID_MESSAGE);
 	
 	// Kiểm tra độ dài của luồng dữ liệu để xác nhận nó có là một TLV package hay không
 	if (buffLen < 8) {
@@ -46,13 +47,33 @@ TLVPackage TLVBuffer::getPackage()
 
 }
 
-void TLVBuffer::addData(char* data, int len)
+bool TLVBuffer::addData(char* data, int len)
 {
+	if (BUFFER_SIZE - buffLen < len) {
+		return false;
+	}
 	// Thêm dữ liệu vào cuối buff
 	memcpy(buff + buffLen, data, len);
 	
 	//Sửa lại độ dài
 	buffLen += len;
+	return true;
+}
+
+char* TLVBuffer::getData()
+{
+	return buff;
+}
+
+bool TLVBuffer::addTLVBuffer(TLVBuffer buf)
+{
+	return addData(buf.getData(), buf.buffLen);
+}
+
+void TLVBuffer::resetBuffer()
+{
+	memset(buff, 0, sizeof(buff));
+	buffLen = 0;
 }
 
 //int main() {

@@ -85,6 +85,22 @@ int main() {
 	ClientHandleRequest hRequest(s, clientRepoPath.c_str());
 	TLVBuffer TLVBuff;
 	char buff[1024]{ 0 };
+	// Gửi tài khoảng, mật khẩu tới cho client
+	while (1) {
+		// xác minh đăng nhập
+		hRequest.login();
+		int byteRecv = recv(s, buff, sizeof(buff), 0);
+		TLVBuff.addData(buff, byteRecv);
+		TLVPackage p = TLVBuff.getPackage();
+		if (p.getTitle() == LOGIN_SUCESS) {
+			SetEvent(ValidatedEvent);
+			hRequest.handleResponse(p.getValue());
+			break;
+		}
+		else {
+			hRequest.handleResponse(p.getValue());
+		}
+	}
 	// Nhận các request của server
 	while (1) {
 		// Nhận các request
@@ -97,24 +113,19 @@ int main() {
 		TLVPackage p = TLVBuff.getPackage();
 		hRequest.setId(p.getId());
 		id = p.getId();
-		while (p.getTitle() != -1) {
-			// Xác thực thành công
-			if (p.getTitle() == 200) {
-				SetEvent(ValidatedEvent);
-				hRequest.handleResponse(p.getValue());
-			}
+		while (p.getTitle() != INVALID_MESSAGE) {
 			// gói tin thông báo
-			if (p.getTitle() == 100) {
+			if (p.getTitle() == NOTIFY_MESSAGE) {
 				hRequest.handleResponse(p.getValue());
 			}
 			// gói tin nghiệp vụ
-			else if (p.getTitle() == 101) {
+			else if (p.getTitle() == CONTROL_MESSAGE) {
 				hRequest.handleResponse2(p.getValue());
 			}
 			// gói tin dữ liệu
 			else {
 				hRequest.handleData(p.getValue(), p.getLength() - 8);
-				if (p.getTitle() == 0) {
+				if (p.getTitle() == DATA_STREAM_END) {
 					hRequest.closeFile();
 				}
 			}

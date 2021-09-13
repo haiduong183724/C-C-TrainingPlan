@@ -37,10 +37,10 @@ Client HandleClientRequest::getClient(int clientId)
 
 void HandleClientRequest::HandlePacket(TLVPackage p)
 {
-	if (p.getTitle() == 100) {// title = 100 => gói tin nghiệp vụ
+	if (p.getTitle() == CONTROL_MESSAGE) {// title = 100 => gói tin nghiệp vụ
 		HandleRequest(p.getValue(), p.getId());
 	}
-	else if(p.getTitle() == 0 || p.getTitle() == 1) {// title = 0 hoặc 1 => gói tin chứa dữ liệu
+	else if(p.getTitle() == DATA_STREAM || p.getTitle() == DATA_STREAM_END) {// title = 0 hoặc 1 => gói tin chứa dữ liệu
 		HandleData(p, p.getId());
 	}
 }
@@ -115,7 +115,7 @@ void HandleClientRequest::Delete(char* filePath, int from)
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s", "DELETE", filePath);
-			TLVPackage p(101, Clients[i].getId(), strlen(request) + 8, request);
+			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 	}
@@ -129,7 +129,7 @@ void HandleClientRequest::Add(char* filePath, int from)
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s", "ADD", filePath);
-			TLVPackage p(101, Clients[i].getId(), strlen(request) + 8, request);
+			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 	}
@@ -137,7 +137,7 @@ void HandleClientRequest::Add(char* filePath, int from)
 	Client c = getClient(from);
 	char request[1024]{ 0 };
 	sprintf(request, "%s %s", "GET", filePath);
-	TLVPackage p(101, from, strlen(request)+8, request);
+	TLVPackage p(CONTROL_MESSAGE, from, strlen(request)+8, request);
 	send(c.socket, p.packageValue(), p.getLength(), 0);
 	
 }
@@ -153,7 +153,7 @@ void HandleClientRequest::Rename(char* filePath, int from)
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s %s", "RENAME", oldName, newName);
-			TLVPackage p(101, Clients[i].getId(), strlen(request) + 8, request);
+			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 	}
@@ -167,14 +167,14 @@ void HandleClientRequest::Edit(char* filePath, int from)
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s", "ADD", filePath);
-			TLVPackage p(101, Clients[i].getId(), strlen(request) + 8, request);
+			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 		else {
 			// yêu cầu client from gửi nội dung file lên 
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s", "GET", filePath);
-			TLVPackage p(101, from, strlen(request) + 8, request);
+			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 	}

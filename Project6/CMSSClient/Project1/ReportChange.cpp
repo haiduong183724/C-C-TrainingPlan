@@ -7,8 +7,10 @@ void ReportChange::operator()(Directory* d, SOCKET s, HANDLE* hMutex, int* Id)
 	while (1) {
 		if (*Id != -1) {
 			id = *Id;
+			int send = 0;
 			WaitForSingleObject(hMutex, INFINITE);
 			while (!d->listFileChange.empty()) {
+				send = 0;
 				pair<FileInfomation, FileStatus> file = d->listFileChange.back();
 				d->listFileChange.pop_back();
 				// Kiểm tra có phải rename file hay không
@@ -16,13 +18,13 @@ void ReportChange::operator()(Directory* d, SOCKET s, HANDLE* hMutex, int* Id)
 					if (!d->listFileChange.empty()) {
 						if (d->listFileChange.back().second == FILE_DELETE) {
 							pair<FileInfomation, FileStatus> file2 = d->listFileChange.back();
-							d->listFileChange.pop_back();
-							SendReport(file2.first, file.first, FILE_RENAME);
+							
+							send = SendReport(file2.first, file.first, FILE_RENAME);
 							goto endloop;
 						}
 					}
 				}
-				SendReport(file.first, file.first, file.second);
+				send = SendReport(file.first, file.first, file.second);
 			endloop:;
 			}
 			ReleaseMutex(hMutex);
@@ -31,7 +33,7 @@ void ReportChange::operator()(Directory* d, SOCKET s, HANDLE* hMutex, int* Id)
 	}
 }
 
-void ReportChange::SendReport(FileInfomation fOld, FileInfomation fNew, FileStatus s)
+int ReportChange::SendReport(FileInfomation fOld, FileInfomation fNew, FileStatus s)
 {
 	char request[1024]{ 0 };
 	switch (s)
@@ -60,6 +62,7 @@ void ReportChange::SendReport(FileInfomation fOld, FileInfomation fNew, FileStat
 		break;
 	}
 	cout << request << endl;
-	TLVPackage p(100, id, strlen(request) + 8, request);
-	send(c, p.packageValue(), p.getLength(), 0);
+	TLVPackage p(CONTROL_MESSAGE, id, strlen(request) + 8, request);
+	int byteSend = send(c, p.packageValue(), p.getLength(), 0);
+	return byteSend;
 }

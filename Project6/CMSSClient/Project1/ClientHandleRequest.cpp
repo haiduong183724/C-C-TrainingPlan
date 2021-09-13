@@ -66,7 +66,7 @@ void ClientHandleRequest::login() {
 	cin >> password;
 	// gửi tới server
 	sprintf(request, "%s %s", username, password);
-	TLVPackage p(100, 1, strlen(request) + 8, request);
+	TLVPackage p(CONTROL_MESSAGE, 1, strlen(request) + 8, request);
 	send(s, p.packageValue(), p.getLength(), 0);
 }
 void ClientHandleRequest::openFile(char* fileName)
@@ -116,11 +116,11 @@ void ClientHandleRequest::sendFile(char* fileName)
 		// Số byte gửi
 		int byteSend = byteRead + 8;
 		f.read(data, byteRead);
-		TLVPackage pakage(1, id, byteSend, data);
+		TLVPackage pakage(DATA_STREAM, id, byteSend, data);
 			sent += byteRead;
 		if (sent == flen) {
 			// Nếu đã đọc hết file => gửi gói tin với cờ 201;
-			pakage.setTitle(0);
+			pakage.setTitle(DATA_STREAM_END);
 		}
 		memset(pakage.packageValue(), 0, sizeof(buffer));
 		memcpy(buffer, pakage.packageValue(), byteSend);

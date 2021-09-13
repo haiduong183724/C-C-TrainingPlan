@@ -4,6 +4,15 @@ using namespace std;
 #ifndef TLVPAGKAGE_H
 #define TLVPACKAGE_H
 #include<WinSock2.h>
+enum MessageTitle
+{
+	DATA_STREAM = 1,
+	DATA_STREAM_END = 0,
+	NOTIFY_MESSAGE = 100,
+	CONTROL_MESSAGE = 101,
+	LOGIN_SUCESS = 200,
+	INVALID_MESSAGE = -1,
+};
 namespace Common
 {
 	void intToByte(int n, char* result);

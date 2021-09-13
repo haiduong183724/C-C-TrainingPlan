@@ -24,6 +24,7 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 				//và gói tin là gói tin nghiệp vụ, 
 				//gói tin này sẽ được đưa xuống cuối buffer để xử lý sau khi hết bận
 				if (p.getTitle() == 100 && sHandle.state == true) {
+					// tim hieu auto lock
 					WaitForSingleObject(gMutex, INFINITE);
 					sHandle.rqBuffer.addData(p.packageValue(), p.getLength());
 					ReleaseMutex(gMutex);
@@ -43,19 +44,27 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 	int id = (int) param;// id của client
 	bool isClient = false;// tình trạng xác thực, true: đã xác thực, false: chưa
 	Client client = sHandle.getClient(id);
-	// xác minh đăng nhập
-	TLVPackage p(100, id, 31, (char*)"send account: username password");
-	send(client.socket, p.packageValue(), p.getLength(), 0);
-	TLVPackage p1(101, id, 17, (char*)"VALIDATE");
-	send(client.socket, p1.packageValue(), p1.getLength(), 0);
+	TLVBuffer clientBuffer;
 	while (true) {
 		char buff[1024]{ 0 };
+		if (clientBuffer.buffLen > 0) {
+			// nếu client buffer có dữ liệu =>  thêm dữ liệu vào buffer chung
+			bool s = sHandle.rqBuffer.addTLVBuffer(clientBuffer);
+			// nếu thêm thành công=> reset lại client buffer
+			if (s == true) {
+				clientBuffer.resetBuffer();
+			}
+		}
 		int byteRecv = recv(client.socket, buff, sizeof(buff), 0);
 		if (byteRecv > 0) {
 			if (isClient) {// nếu đã xác thực thì đưa gói tin vào TLV buffer để đối tượng HandleClientRequest xử lý
 				WaitForSingleObject(gMutex, INFINITE);
-				sHandle.rqBuffer.addData(buff, byteRecv);
+				bool s = sHandle.rqBuffer.addData(buff, byteRecv);
 				ReleaseMutex(gMutex);
+				// nếu không thêm được dữ liệu vào buffer chung
+				if (s == false) {
+					clientBuffer.addData(buff, byteRecv);
+				}
 			}
 			else {
 				// nếu không thì gói tin này là gói tin xác thực
@@ -64,14 +73,12 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 				sscanf(p.getValue(), "%s%s", userName, password);
 				// xác thực
 				isClient = client.checkAccount(userName, password, id);
-				if (!isClient) {// nếu sai, gửi lại y/c xác thực đăng nhập
-					TLVPackage p(100, id, 31 , (char*)"account is'nt correct!");
+				if (!isClient) {// chưa xác minh đăng nhập được, gửi lại y/c xác thực đăng nhập
+					TLVPackage p(NOTIFY_MESSAGE, id, 31 , (char*)"account is'nt correct!");
 					send(client.socket, p.packageValue(), p.getLength(), 0);
-					TLVPackage p1(101, id, 17, (char*)"VALIDATE");
-					send(client.socket, p1.packageValue(), p1.getLength(), 0);
 				}
 				else {// nếu đúng, gửi yêu cầu thành công
-					TLVPackage p(200, id, 28, (char*)"account is correct!");
+					TLVPackage p(LOGIN_SUCESS, id, 28, (char*)"account is correct!");
 					send(client.socket, p.packageValue(), p.getLength(), 0);
 				}
 			}
