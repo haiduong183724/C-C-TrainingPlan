@@ -66,74 +66,86 @@ void monitorDirectory(Directory* d)
 		Sleep(50);
 	}
 }
+//int main() {
+//	// đọc dữ liệu cấu hình
+//	readConfig();
+//	// Khởi tạo socket
+//	CreateVaildateEvent();
+//	WSADATA DATA;
+//	WSAStartup(MAKEWORD(2, 2), &DATA);
+//	HANDLE hMutex = CreateMutexA(NULL, false, NULL);
+//	SOCKET s = createSocket((char*)addr.c_str(), port);
+//	// khởi tạo thư mục cần giám sát
+//	Directory d(clientRepoPath.c_str());
+//	// tạo thread để giám sát thư mục
+//	thread monitorThread(monitorDirectory, &d);
+//	int id = -1;
+//	// tạo thread để gửi các thay đổi tới server
+//	thread getChangeThread(ReportChange(), &d,s, &hMutex, &id);
+//	ClientHandleRequest hRequest(s, clientRepoPath.c_str());
+//	TLVBuffer TLVBuff;
+//	char buff[1024]{ 0 };
+//	// Gửi tài khoảng, mật khẩu tới cho client
+//	while (1) {
+//		// xác minh đăng nhập
+//		hRequest.login();
+//		int byteRecv = recv(s, buff, sizeof(buff), 0);
+//		TLVBuff.addData(buff, byteRecv);
+//		TLVPackage p = TLVBuff.getPackage();
+//		if (p.getTitle() == LOGIN_SUCESS) {
+//			SetEvent(ValidatedEvent);
+//			hRequest.handleResponse(p.getValue());
+//			break;
+//		}
+//		else {
+//			hRequest.handleResponse(p.getValue());
+//		}
+//	}
+//	// Nhận các request của server
+//	while (1) {
+//		// Nhận các request
+//		int byteRecv = recv(s, buff, sizeof(buff), 0);
+//		ResetEvent(HandleRequest);
+//		if (byteRecv < 0) {
+//			break;
+//		}
+//		TLVBuff.addData(buff, byteRecv);
+//		TLVPackage p = TLVBuff.getPackage();
+//		hRequest.setId(p.getId());
+//		id = p.getId();
+//		while (p.getTitle() != INVALID_MESSAGE) {
+//			// gói tin thông báo
+//			if (p.getTitle() == NOTIFY_MESSAGE) {
+//				hRequest.handleResponse(p.getValue());
+//			}
+//			// gói tin nghiệp vụ
+//			else if (p.getTitle() == CONTROL_MESSAGE) {
+//				hRequest.handleResponse2(p.getValue());
+//			}
+//			// gói tin dữ liệu
+//			else {
+//				hRequest.handleData(p.getValue(), p.getLength() - 8);
+//				if (p.getTitle() == DATA_STREAM_END) {
+//					hRequest.closeFile();
+//				}
+//			}
+//			p = TLVBuff.getPackage();
+//		}
+//		SetEvent(HandleRequest);
+//	}
+//	monitorThread.join();
+//	getChangeThread.join();
+//	return 0;
+//}
 int main() {
-	// đọc dữ liệu cấu hình
-	readConfig();
-	// Khởi tạo socket
-	CreateVaildateEvent();
-	WSADATA DATA;
-	WSAStartup(MAKEWORD(2, 2), &DATA);
-	HANDLE hMutex = CreateMutexA(NULL, false, NULL);
-	SOCKET s = createSocket((char*)addr.c_str(), port);
-	// khởi tạo thư mục cần giám sát
-	Directory d(clientRepoPath.c_str());
-	// tạo thread để giám sát thư mục
-	thread monitorThread(monitorDirectory, &d);
-	int id = -1;
-	// tạo thread để gửi các thay đổi tới server
-	thread getChangeThread(ReportChange(), &d,s, &hMutex, &id);
-	ClientHandleRequest hRequest(s, clientRepoPath.c_str());
-	TLVBuffer TLVBuff;
-	char buff[1024]{ 0 };
-	// Gửi tài khoảng, mật khẩu tới cho client
-	while (1) {
-		// xác minh đăng nhập
-		hRequest.login();
-		int byteRecv = recv(s, buff, sizeof(buff), 0);
-		TLVBuff.addData(buff, byteRecv);
-		TLVPackage p = TLVBuff.getPackage();
-		if (p.getTitle() == LOGIN_SUCESS) {
-			SetEvent(ValidatedEvent);
-			hRequest.handleResponse(p.getValue());
-			break;
-		}
-		else {
-			hRequest.handleResponse(p.getValue());
-		}
-	}
-	// Nhận các request của server
-	while (1) {
-		// Nhận các request
-		int byteRecv = recv(s, buff, sizeof(buff), 0);
-		ResetEvent(HandleRequest);
-		if (byteRecv < 0) {
-			break;
-		}
-		TLVBuff.addData(buff, byteRecv);
-		TLVPackage p = TLVBuff.getPackage();
-		hRequest.setId(p.getId());
-		id = p.getId();
-		while (p.getTitle() != INVALID_MESSAGE) {
-			// gói tin thông báo
-			if (p.getTitle() == NOTIFY_MESSAGE) {
-				hRequest.handleResponse(p.getValue());
-			}
-			// gói tin nghiệp vụ
-			else if (p.getTitle() == CONTROL_MESSAGE) {
-				hRequest.handleResponse2(p.getValue());
-			}
-			// gói tin dữ liệu
-			else {
-				hRequest.handleData(p.getValue(), p.getLength() - 8);
-				if (p.getTitle() == DATA_STREAM_END) {
-					hRequest.closeFile();
-				}
-			}
-			p = TLVBuff.getPackage();
-		}
-		SetEvent(HandleRequest);
-	}
-	monitorThread.join();
-	getChangeThread.join();
-	return 0;
+	vector<int> v;
+	v.push_back(1);
+	v.push_back(2);
+	v.push_back(3);
+	v.push_back(4);
+	v.push_back(5);
+	int a = v.front();
+	v.erase(v.begin());
+	a = v.back();
+	v.insert(v.begin(), 6);
 }

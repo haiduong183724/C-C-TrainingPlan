@@ -18,13 +18,20 @@ void ReportChange::operator()(Directory* d, SOCKET s, HANDLE* hMutex, int* Id)
 					if (!d->listFileChange.empty()) {
 						if (d->listFileChange.back().second == FILE_DELETE) {
 							pair<FileInfomation, FileStatus> file2 = d->listFileChange.back();
-							
+							d->listFileChange.pop_back();
 							send = SendReport(file2.first, file.first, FILE_RENAME);
+							if (send < 0) {// disconnect
+								d->listFileChange.push_back(file2);
+								d->listFileChange.push_back(file);
+							}
 							goto endloop;
 						}
 					}
 				}
 				send = SendReport(file.first, file.first, file.second);
+				if (send < 0) {// disconnect
+					d->listFileChange.push_back(file);
+				}
 			endloop:;
 			}
 			ReleaseMutex(hMutex);
