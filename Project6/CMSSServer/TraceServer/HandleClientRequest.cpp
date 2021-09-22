@@ -81,8 +81,12 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 	}
 	case 'R'://RENAME
 	{
-		Rename(rq+strlen(request) +1, from);
+		Rename(rq + strlen(request) + 1, from);
 		break;
+	}
+	case 'C':// CONTINUE
+	{
+		Continue(from);
 	}
 	default:
 		break;
@@ -100,10 +104,22 @@ void HandleClientRequest::HandleData(TLVPackage p, int from)
 			memcpy(dataSend, p.packageValue(), p.getLength());
 			send(Clients[i].socket, dataSend, p.getLength(), 0);
 		}
+		else{
+			string filePath = clients[i].status.first;
+			int position = clients[i].status.second;
+			if (p.getTitle() == DATA_STREAM_END) {
+				//client đã truyền xong
+				clients[i].changeStatus("", Client::FREE);
+			}
+			else {
+				//Client chưa truyền xong
+				clients[i].changeStatus(filePath, position + p.getLength() - 8);
+
+			}
+		}
 	}
 	if (p.getTitle() == 0) {
 		state = false;
-		cout << 2 << endl;
 	}
 }
 
@@ -128,17 +144,19 @@ void HandleClientRequest::Add(char* filePath, int from)
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
-			sprintf(request, "%s %s", "ADD", filePath);
+			sprintf(request, "%s %s %d", "ADD", filePath, 0);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
+		else {
+			char request[1024]{ 0 };
+			sprintf(request, "%s %s", "GET", filePath);
+			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
+			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
+			clients[i].changeStatus(filePath, 0);
+		}
 	}
-	// thông báo client gửi file lên
-	Client c = getClient(from);
-	char request[1024]{ 0 };
-	sprintf(request, "%s %s", "GET", filePath);
-	TLVPackage p(CONTROL_MESSAGE, from, strlen(request)+8, request);
-	send(c.socket, p.packageValue(), p.getLength(), 0);
+	
 	
 }
 
@@ -166,7 +184,7 @@ void HandleClientRequest::Edit(char* filePath, int from)
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
-			sprintf(request, "%s %s", "ADD", filePath);
+			sprintf(request, "%s %s %d", "ADD", filePath, 0);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
@@ -176,9 +194,49 @@ void HandleClientRequest::Edit(char* filePath, int from)
 			sprintf(request, "%s %s", "GET", filePath);
 			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
+			clients[i].changeStatus(filePath, 0);
 		}
 	}
 	
 	
 }
+
+void HandleClientRequest::Continue(int id)
+{
+	// lấy trạng thái logs của client
+	pair<string, int> log = getClientLog(id);
+	for (int i = 0; i < clients.size(); i++) {
+		if (clients[i].getId() != id) {
+			char request[1024]{ 0 };
+			sprintf(request, "%s %s %d", "ADD", log.first, log.second);
+			TLVPackage p(CONTROL_MESSAGE, clients[i].getId(), strlen(request) + 8, request);
+			send(clients[i].socket, p.packageValue(), p.getLength(), 0);
+		}
+		else {
+			// yêu cầu client from gửi nội dung file lên 
+			char request[1024]{ 0 };
+			sprintf(request, "%s %s %d", "RESUME", log.first, log.second);
+			TLVPackage p(CONTROL_MESSAGE, id, strlen(request) + 8, request);
+			send(clients[i].socket, p.packageValue(), p.getLength(), 0);
+			clients[i].changeStatus(log.first, log.second);
+		}
+	}
+}
+
+pair<string, int> HandleClientRequest::getClientLog(int clientId)
+{
+	Client client = getClient(clientId);
+	string clientIpAddr = inet_ntoa(client.caddr.sin_addr);
+	for (int i = logs.size() - 1; i >= 0; i--) {
+		char ipAddress[100]{ 0 }, fileName[1024]{ 0 }, position[1024]{ 0 };
+		sscanf(logs[i].c_str(), "%s%s%s", ipAddress, fileName, position);
+		// Nếu thấy log của client
+		if (strcmp(clientIpAddr.c_str(), ipAddress) == 0) {
+			logs.erase(logs.begin() + i);
+			string filePath = fileName;
+			return make_pair(filePath, atoi(position));
+		}
+	}
+}
+
 

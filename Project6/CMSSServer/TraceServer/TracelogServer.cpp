@@ -23,7 +23,7 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 				// nếu trạng thái của HandleClientRequest là đang bận,
 				//và gói tin là gói tin nghiệp vụ, 
 				//gói tin này sẽ được đưa xuống cuối buffer để xử lý sau khi hết bận
-				if (p.getTitle() == 100 && sHandle.state == true) {
+				if (p.getTitle() == CONTROL_MESSAGE && sHandle.state == true) {
 					// tim hieu auto lock
 					WaitForSingleObject(gMutex, INFINITE);
 					sHandle.rqBuffer.addData(p.packageValue(), p.getLength());
@@ -59,6 +59,13 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 		if (byteRecv > 0) {
 			if (isClient) {// nếu đã xác thực thì đưa gói tin vào TLV buffer để đối tượng HandleClientRequest xử lý
 				WaitForSingleObject(gMutex, INFINITE);
+				
+				
+
+				// bên phía consumer
+				// sau khi xử lý dữ liệu tử bufer thì nó sẽ call
+				//reqBufferNotNull.notify(); //notifyall
+
 				bool s = sHandle.rqBuffer.addData(buff, byteRecv);
 				ReleaseMutex(gMutex);
 				// nếu không thêm được dữ liệu vào buffer chung
@@ -84,7 +91,17 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 			}
 		}
 		else {
-			cout << "A client has disconnect" << endl;;
+			cout << "A client has disconnect" << endl;
+			// kiểm tra trạng thái của client
+			Client c = sHandle.getClient(id);
+			// nếu client này đang gửi file tới server
+			if (c.status.second != Client::FREE) {
+				// log lại vị trí đã gửi được
+				sHandle.logs.push_back(c.getStatus());
+			}
+			TLVPackage p(DATA_STREAM_END, id, 8, (char*)"");
+			sHandle.HandleData(p, id);
+			sHandle.removeClient(id);
 			break;
 		}
 	}
@@ -114,7 +131,7 @@ int main() {
 		int clen = sizeof(caddr);
 		SOCKET c = accept(s, (sockaddr*)&caddr, &clen);
 		DWORD ID;
-		Client client(c, sHandle.numClient);
+		Client client(c, sHandle.numClient, caddr);
 		sHandle.addClient(client);
 		// tạo thread để lắng nghe các request từ client
 		CreateThread(NULL, 0, WaitClientEvent, (LPVOID)sHandle.numClient, 0, &ID);

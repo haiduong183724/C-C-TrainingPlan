@@ -13,7 +13,6 @@ private:
 	std::vector<Client> clients;
 	HANDLE hmutex;
 	// trạng thái của đối tượng
-	
 public:
 	/// <summary>
 	/// trạng thái làm việc của đối tượng
@@ -21,6 +20,10 @@ public:
 	/// false : đanh rảnh
 	/// </summary>
 	bool state = false;
+	/// <summary>
+	/// ghi lại trạng thái của các client khi disconect
+	/// </summary>
+	std::vector<std::string> logs;
 	/// <summary>
 	/// Hàm khởi tạo
 	/// </summary>
@@ -90,6 +93,12 @@ public:
 	/// <param name="filePath">tên file chỉnh sửa</param>
 	/// <param name="from">id của client gửi</param>
 	void Edit(char* filePath, int from);
+	/// <summary>
+	/// Tiếp tục gửi dữ liệu khi bị mất két nối
+	/// </summary>
+	void Continue(int clientId);
+
+	pair<string, int> getClientLog(int clientId);
 };
 
 #endif // !HANDLECLIENTREQUEST_H
