@@ -97,7 +97,11 @@ public:
 	/// Tiếp tục gửi dữ liệu khi bị mất két nối
 	/// </summary>
 	void Continue(int clientId);
-
+	/// <summary>
+	/// lấy trạng thái hoạt động của một client
+	/// </summary>
+	/// <param name="clientId">id của client đó</param>
+	/// <returns>một cắp gồm tên file và vị trí đã gửi </returns>
 	pair<string, int> getClientLog(int clientId);
 };
 

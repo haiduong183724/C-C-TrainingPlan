@@ -61,30 +61,30 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 
 	switch (request[0])
 	{
-	case 'D':// DELETE 
+	case 'D':// Xóa file
 	{
 		Delete(ctn, from);
 		break;
 	}
-	case 'E':// EDIT
+	case 'E':// Chỉnh sửa nội dung của file
 	{
 		state = true;
 		Edit(ctn, from);
 		break;
 	}
-	case 'A'://ADD
+	case 'A':// Thêm một file
 	{
 		state = true;
 		cout << 1 << endl;
 		Add(ctn, from);
 		break;
 	}
-	case 'R'://RENAME
+	case 'R':// đổi tên file
 	{
 		Rename(rq + strlen(request) + 1, from);
 		break;
 	}
-	case 'C':// CONTINUE
+	case 'C':// yêu cầu tiếp tục gửi dữ liệu lên
 	{
 		Continue(from);
 	}
@@ -208,14 +208,15 @@ void HandleClientRequest::Continue(int id)
 	for (int i = 0; i < clients.size(); i++) {
 		if (clients[i].getId() != id) {
 			char request[1024]{ 0 };
+			// gửi thông báo cho các client khác mở file lên và ghi tiếp vào cuối file
 			sprintf(request, "%s %s %d", "ADD", log.first, log.second);
 			TLVPackage p(CONTROL_MESSAGE, clients[i].getId(), strlen(request) + 8, request);
 			send(clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 		else {
-			// yêu cầu client from gửi nội dung file lên 
+			// yêu cầu client from gửi tiếp nội dung file từ vị trí log.second lên 
 			char request[1024]{ 0 };
-			sprintf(request, "%s %s %d", "RESUME", log.first, log.second);
+			sprintf(request, "%s %s %d", "GET", log.first, log.second);
 			TLVPackage p(CONTROL_MESSAGE, id, strlen(request) + 8, request);
 			send(clients[i].socket, p.packageValue(), p.getLength(), 0);
 			clients[i].changeStatus(log.first, log.second);

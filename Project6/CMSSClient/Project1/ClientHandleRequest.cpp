@@ -30,12 +30,17 @@ void ClientHandleRequest::handleResponse2(char* response)
 		}
 		case 'G':
 		{
+			char filePath[1024]{ 0 }, position[1024]{};
+			sscanf(response + strlen(rq) + 1, "%s%s", filePath, position);
+			openFile(cnt, atoi(position));
 			sendFile(cnt);
 			break;
 		}
 		case 'A':
 		{
-			openFile(cnt);
+			char filePath[1024]{ 0 }, position[1024]{};
+			sscanf(response + strlen(rq) + 1, "%s%s", filePath, position);
+			openFile(cnt, atoi(position));
 			break;
 		}
 		case 'D':
@@ -69,15 +74,22 @@ void ClientHandleRequest::login() {
 	TLVPackage p(CONTROL_MESSAGE, 1, strlen(request) + 8, request);
 	send(s, p.packageValue(), p.getLength(), 0);
 }
-void ClientHandleRequest::openFile(char* fileName)
+void ClientHandleRequest::openFile(char* fileName, int filePositon)
 {
 	// mở file lên để ghi
 	char filePath[1024];
 	memset(filePath, 0, sizeof(filePath));
 	sprintf(filePath, "%s\\%s", path, fileName);
-	f.open(filePath, ios::out|ios::binary);
+	// nếu vị trí mở file > 0 => mở file ở chế độ ghi tiếp
+	if (filePositon > 0) {
+		f.open(filePath, ios::out | ios::binary | ios::app);
+		f.seekg(filePositon);
+	}
+	else {// tạo file mới
+		f.open(filePath, ios::out | ios::binary);
+	}
 	if (!f.is_open()) {
-		cout << "file is'nt exist!" << endl;
+		cout << "can'nt open file!" << endl;
 	}
 }
 
@@ -89,14 +101,15 @@ void ClientHandleRequest::closeFile()
 	}
 }
 
-void ClientHandleRequest::sendFile(char* fileName)
+void ClientHandleRequest::sendFile(char* fileName, int position)
 {
 	fstream f;
 	// mở file
 	char filePath[1024];
 	memset(filePath, 0, sizeof(filePath));
 	sprintf(filePath, "%s\\%s", path, fileName);
-	f.open(filePath, ios::in | ios::binary);
+	f.open(filePath, ios::in | ios::binary | ios::app);
+	f.seekg(position);
 	// Chuyển con trỏ file tới cuối file
 	f.seekg(0, ios::end);
 	// lấy độ dài của file

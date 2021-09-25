@@ -2,40 +2,35 @@
 #include<iostream>
 #include"Client.h"
 #include "HandleClientRequest.h"
+#include<mutex>
 using namespace std;
 HandleClientRequest sHandle;
-HANDLE gMutex;
-void CreateMtx() {
-	gMutex = CreateMutexA(NULL, false, NULL);
-	if (gMutex == INVALID_HANDLE_VALUE) {
-		cout << "Create mutex false" << endl;
-	}
-}
+mutex g_mtx;
 DWORD WINAPI HandleClientRequests(LPVOID param) {
 	while (true) {
 		// kiểm tra có client nào đang chạy không
 		if (sHandle.numClient > 0) {
-			WaitForSingleObject(gMutex, INFINITE);
+			g_mtx.lock();
 			// kiểm tra buffer có đủ gói tin TLV hay không
 			TLVPackage p = sHandle.rqBuffer.getPackage();
-			ReleaseMutex(gMutex);
+			g_mtx.unlock();
 			while (p.getTitle() != -1) {
 				// nếu trạng thái của HandleClientRequest là đang bận,
 				//và gói tin là gói tin nghiệp vụ, 
 				//gói tin này sẽ được đưa xuống cuối buffer để xử lý sau khi hết bận
 				if (p.getTitle() == CONTROL_MESSAGE && sHandle.state == true) {
 					// tim hieu auto lock
-					WaitForSingleObject(gMutex, INFINITE);
+					g_mtx.lock();
 					sHandle.rqBuffer.addData(p.packageValue(), p.getLength());
-					ReleaseMutex(gMutex);
+					g_mtx.unlock();
 				}
 				else {
 					// nếu không thì sẽ sử lý gói tin
 					sHandle.HandlePacket(p);
 				}
-				WaitForSingleObject(gMutex, INFINITE);
+				g_mtx.lock();
 				p = sHandle.rqBuffer.getPackage();
-				ReleaseMutex(gMutex);
+				g_mtx.unlock();
 			}
 		}
 	}
@@ -58,16 +53,9 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 		int byteRecv = recv(client.socket, buff, sizeof(buff), 0);
 		if (byteRecv > 0) {
 			if (isClient) {// nếu đã xác thực thì đưa gói tin vào TLV buffer để đối tượng HandleClientRequest xử lý
-				WaitForSingleObject(gMutex, INFINITE);
-				
-				
-
-				// bên phía consumer
-				// sau khi xử lý dữ liệu tử bufer thì nó sẽ call
-				//reqBufferNotNull.notify(); //notifyall
-
+				g_mtx.lock();
 				bool s = sHandle.rqBuffer.addData(buff, byteRecv);
-				ReleaseMutex(gMutex);
+				g_mtx.lock();
 				// nếu không thêm được dữ liệu vào buffer chung
 				if (s == false) {
 					clientBuffer.addData(buff, byteRecv);
@@ -99,6 +87,7 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 				// log lại vị trí đã gửi được
 				sHandle.logs.push_back(c.getStatus());
 			}
+			// gưi một gói tin rỗng để client đóng file đang mở để ghi.
 			TLVPackage p(DATA_STREAM_END, id, 8, (char*)"");
 			sHandle.HandleData(p, id);
 			sHandle.removeClient(id);
@@ -110,8 +99,6 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 
 
 int main() {
-	// khởi tạo mutex đồng bộ
-	CreateMtx();
 	WSADATA data;
 	// tạo socket lắng nghe kết nối
 	WSAStartup(MAKEWORD(2, 2), &data);

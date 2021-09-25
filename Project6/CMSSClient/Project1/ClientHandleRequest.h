@@ -44,7 +44,7 @@ public:
 	/// mở file để thực hiện thao tác ghi
 	/// </summary>
 	/// <param name="fileName">đường dẫn tới file</param>
-	void openFile(char* fileName);
+	void openFile(char* fileName, int filePositon);
 	/// <summary>
 	/// đóng file
 	/// </summary>
@@ -53,7 +53,7 @@ public:
 	/// gửi file tới server
 	/// </summary>
 	/// <param name="fileName">đường dẫn tới file</param>
-	void sendFile(char* fileName);
+	void sendFile(char* fileName, int position);
 	/// <summary>
 	/// Xóa file
 	/// </summary>
