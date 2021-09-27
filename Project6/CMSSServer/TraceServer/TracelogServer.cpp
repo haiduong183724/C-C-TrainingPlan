@@ -55,11 +55,11 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 			if (isClient) {// nếu đã xác thực thì đưa gói tin vào TLV buffer để đối tượng HandleClientRequest xử lý
 				g_mtx.lock();
 				bool s = sHandle.rqBuffer.addData(buff, byteRecv);
-				g_mtx.lock();
 				// nếu không thêm được dữ liệu vào buffer chung
 				if (s == false) {
 					clientBuffer.addData(buff, byteRecv);
 				}
+				g_mtx.unlock();
 			}
 			else {
 				// nếu không thì gói tin này là gói tin xác thực

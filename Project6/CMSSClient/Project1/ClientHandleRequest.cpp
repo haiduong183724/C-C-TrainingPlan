@@ -32,8 +32,7 @@ void ClientHandleRequest::handleResponse2(char* response)
 		{
 			char filePath[1024]{ 0 }, position[1024]{};
 			sscanf(response + strlen(rq) + 1, "%s%s", filePath, position);
-			openFile(cnt, atoi(position));
-			sendFile(cnt);
+			sendFile(cnt,atoi(position));
 			break;
 		}
 		case 'A':
