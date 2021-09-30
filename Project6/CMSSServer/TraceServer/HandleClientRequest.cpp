@@ -37,6 +37,7 @@ Client HandleClientRequest::getClient(int clientId)
 
 void HandleClientRequest::HandlePacket(TLVPackage p)
 {
+	state = true;
 	if (p.getTitle() == CONTROL_MESSAGE) {// title = 100 => gói tin nghiệp vụ
 		HandleRequest(p.getValue(), p.getId());
 	}
@@ -58,7 +59,6 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 	f.open((char*)"log.txt", ios::out | ios::app);
 	// ghi lại các chỉnh sửa để theo dõi
 	f.write(log, strlen(log));
-
 	switch (request[0])
 	{
 	case 'D':// Xóa file
@@ -68,13 +68,11 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 	}
 	case 'E':// Chỉnh sửa nội dung của file
 	{
-		state = true;
 		Edit(ctn, from);
 		break;
 	}
 	case 'A':// Thêm một file
 	{
-		state = true;
 		cout << 1 << endl;
 		Add(ctn, from);
 		break;
@@ -96,6 +94,8 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 void HandleClientRequest::HandleData(TLVPackage p, int from)
 {
 	// chuyển tiếp dữ liệu này cho các client khác 
+	int pLen = p.getLength() - 8;
+	file.write(p.getValue(), pLen);
 	vector<Client> Clients = clients;
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
@@ -119,45 +119,50 @@ void HandleClientRequest::HandleData(TLVPackage p, int from)
 		}
 	}
 	if (p.getTitle() == 0) {
-		state = false;
+		closeFile();
 	}
 }
 
-void HandleClientRequest::Delete(char* filePath, int from)
+void HandleClientRequest::Delete(char* fileName, int from)
 {
+	char filePath[1024]{ 0 };
+	sprintf(filePath, "%s\\%s", repoPath, fileName);
+	remove(filePath);
 	// gửi yêu cầu xóa file đến cho các client khác
 	vector<Client> Clients = clients;
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
-			sprintf(request, "%s %s", "DELETE", filePath);
+			sprintf(request, "%s %s", "DELETE", fileName);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 	}
+	state = false;
 }
 
-void HandleClientRequest::Add(char* filePath, int from)
+void HandleClientRequest::Add(char* fileName, int from)
 {
 	// thông báo các client khác mở file
 	vector<Client> Clients = clients;
+	char filePath[1024]{ 0 };
+	sprintf(filePath, "%s\\%s", repoPath, fileName);
+	file.open(filePath, ios::out|ios::binary);
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
-			sprintf(request, "%s %s %d", "ADD", filePath, 0);
+			sprintf(request, "%s %s %d", "ADD", fileName, 0);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 		else {
 			char request[1024]{ 0 };
-			sprintf(request, "%s %s", "GET", filePath);
+			sprintf(request, "%s %s", "GET", fileName);
 			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 			clients[i].changeStatus(filePath, 0);
 		}
 	}
-	
-	
 }
 
 void HandleClientRequest::Rename(char* filePath, int from)
@@ -167,6 +172,10 @@ void HandleClientRequest::Rename(char* filePath, int from)
 	char oldName[1024]{ 0 }, newName[1024]{ 0 };
 	sscanf(filePath, "%s %s", oldName, newName);
 	// gửi yêu cầu đổi tên cho các client khác
+	char oldPath[1024]{ 0 }, newPath[1024]{ 0 };
+	sprintf(oldPath, "%s\\%s", repoPath, oldName);
+	sprintf(newPath, "%s\\%s", repoPath, newName);
+	rename(oldPath, newPath);
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
@@ -175,23 +184,27 @@ void HandleClientRequest::Rename(char* filePath, int from)
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 	}
+	state = false;
 }
 
-void HandleClientRequest::Edit(char* filePath, int from)
+void HandleClientRequest::Edit(char* fileName, int from)
 {
 	// thông báo cho các client khác mở file để nhận dữ liệu
+	char filePath[1024]{ 0 };
+	sprintf(filePath, "%s\\%s", repoPath, fileName);
+	file.open(filePath, ios::out| ios::binary);
 	vector<Client> Clients = clients;
 	for (int i = 0; i < Clients.size(); i++) {
 		if (Clients[i].getId() != from) {
 			char request[1024]{ 0 };
-			sprintf(request, "%s %s %d", "ADD", filePath, 0);
+			sprintf(request, "%s %s %d", "ADD", fileName, 0);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 		else {
 			// yêu cầu client from gửi nội dung file lên 
 			char request[1024]{ 0 };
-			sprintf(request, "%s %s", "GET", filePath);
+			sprintf(request, "%s %s", "GET", fileName);
 			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 			clients[i].changeStatus(filePath, 0);
@@ -205,6 +218,10 @@ void HandleClientRequest::Continue(int id)
 {
 	// lấy trạng thái logs của client
 	pair<string, int> log = getClientLog(id);
+	char filePath[1024]{ 0 };
+	sprintf(filePath, "%s\\%s", repoPath, log.first);
+	file.open(filePath, ios::out | ios::app);
+	file.seekg(log.second);
 	for (int i = 0; i < clients.size(); i++) {
 		if (clients[i].getId() != id) {
 			char request[1024]{ 0 };
@@ -238,6 +255,18 @@ pair<string, int> HandleClientRequest::getClientLog(int clientId)
 			return make_pair(filePath, atoi(position));
 		}
 	}
+}
+
+void HandleClientRequest::setPath(char* path)
+{
+	memset(repoPath, 0, sizeof(repoPath));
+	strcat(repoPath, path);
+}
+
+void HandleClientRequest::closeFile()
+{
+	file.close();
+	state = false;
 }
 
 

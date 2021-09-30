@@ -6,13 +6,20 @@
 using namespace std;
 HandleClientRequest sHandle;
 mutex g_mtx;
+HANDLE bufferFullEvent;
+void CreateBufferEvent() {
+	bufferFullEvent = CreateEventA(NULL, true, true, NULL);
+}
+
 DWORD WINAPI HandleClientRequests(LPVOID param) {
+	TLVBuffer buff;
 	while (true) {
 		// kiểm tra có client nào đang chạy không
 		if (sHandle.numClient > 0) {
 			g_mtx.lock();
 			// kiểm tra buffer có đủ gói tin TLV hay không
 			TLVPackage p = sHandle.rqBuffer.getPackage();
+			SetEvent(bufferFullEvent);
 			g_mtx.unlock();
 			while (p.getTitle() != -1) {
 				// nếu trạng thái của HandleClientRequest là đang bận,
@@ -36,30 +43,26 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 	}
 }
 DWORD WINAPI WaitClientEvent(LPVOID param){
-	int id = (int) param;// id của client
+	int id = (int)param;// id của client
 	bool isClient = false;// tình trạng xác thực, true: đã xác thực, false: chưa
 	Client client = sHandle.getClient(id);
-	TLVBuffer clientBuffer;
 	while (true) {
 		char buff[1024]{ 0 };
-		if (clientBuffer.buffLen > 0) {
-			// nếu client buffer có dữ liệu =>  thêm dữ liệu vào buffer chung
-			bool s = sHandle.rqBuffer.addTLVBuffer(clientBuffer);
-			// nếu thêm thành công=> reset lại client buffer
-			if (s == true) {
-				clientBuffer.resetBuffer();
-			}
-		}
 		int byteRecv = recv(client.socket, buff, sizeof(buff), 0);
 		if (byteRecv > 0) {
 			if (isClient) {// nếu đã xác thực thì đưa gói tin vào TLV buffer để đối tượng HandleClientRequest xử lý
-				g_mtx.lock();
-				bool s = sHandle.rqBuffer.addData(buff, byteRecv);
-				// nếu không thêm được dữ liệu vào buffer chung
-				if (s == false) {
-					clientBuffer.addData(buff, byteRecv);
+				
+				while (true) {
+					WaitForSingleObject(bufferFullEvent, INFINITE);
+					g_mtx.lock();
+					bool s = sHandle.rqBuffer.addData(buff, byteRecv);
+					if (s) {
+						g_mtx.unlock();
+						break;
+					}
+					ResetEvent(bufferFullEvent);
+					g_mtx.unlock();
 				}
-				g_mtx.unlock();
 			}
 			else {
 				// nếu không thì gói tin này là gói tin xác thực
@@ -69,7 +72,7 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 				// xác thực
 				isClient = client.checkAccount(userName, password, id);
 				if (!isClient) {// chưa xác minh đăng nhập được, gửi lại y/c xác thực đăng nhập
-					TLVPackage p(NOTIFY_MESSAGE, id, 31 , (char*)"account is'nt correct!");
+					TLVPackage p(NOTIFY_MESSAGE, id, 31, (char*)"account is'nt correct!");
 					send(client.socket, p.packageValue(), p.getLength(), 0);
 				}
 				else {// nếu đúng, gửi yêu cầu thành công
@@ -111,6 +114,8 @@ int main() {
 	bind(s, (sockaddr*)&saddr, sizeof(saddr));
 	listen(s, 10);
 	int numThread = 0;
+	sHandle.setPath((char*)"Repo");
+	CreateBufferEvent();
 	// tạo thread xử lý các request từ client
 	CreateThread(NULL, 0, HandleClientRequests, NULL, 0, NULL);
 	while (0 == 0) {

@@ -19,6 +19,26 @@ FileInfomation::FileInfomation(const char* filePath)
     }
 }
 
+FileInfomation::FileInfomation(const char* filePath, int s)
+{
+    // tạo đối tượng handle chỉ tới file
+    WIN32_FIND_DATAA FindData;
+    HANDLE hFile = FindFirstFileA(filePath, &FindData);
+    if (hFile != INVALID_HANDLE_VALUE) {
+        // copy fileName
+        strcat(path, filePath);
+        strcat(fileName, FindData.cFileName);
+        // update file info
+        SYSTEMTIME st;
+        // cập nhật thời gian chỉnh sửa và thời gian khởi tạo
+        FileTimeToSystemTime(&(FindData.ftLastWriteTime), &st);
+        modifiedDate.setDate(st);
+        FileTimeToSystemTime(&(FindData.ftCreationTime), &st);
+        createdDate.setDate(st);
+    }
+    fileStatus = s;
+}
+
 bool FileInfomation::updateFile()
 {
     WIN32_FIND_DATAA FindData;

@@ -7,6 +7,7 @@ ClientHandleRequest::ClientHandleRequest(SOCKET clientS, const char* Path)
 	memset(path, 0, sizeof(path));
 	s = clientS;
 	strcat(path, Path);
+	d = new Directory(path);
 }
 
 void ClientHandleRequest::handleResponse(char* response)
@@ -87,6 +88,8 @@ void ClientHandleRequest::openFile(char* fileName, int filePositon)
 	else {// tạo file mới
 		f.open(filePath, ios::out | ios::binary);
 	}
+	FileInfomation newFile(fileName);
+	d->addFile(newFile);
 	if (!f.is_open()) {
 		cout << "can'nt open file!" << endl;
 	}
@@ -94,6 +97,7 @@ void ClientHandleRequest::openFile(char* fileName, int filePositon)
 
 void ClientHandleRequest::closeFile()
 {
+	d->listFile = d->settingFile();
 	// đóng file lại
 	if (f.is_open()) {
 		f.close();
@@ -107,9 +111,11 @@ void ClientHandleRequest::sendFile(char* fileName, int position)
 	char filePath[1024];
 	memset(filePath, 0, sizeof(filePath));
 	sprintf(filePath, "%s\\%s", path, fileName);
-	f.open(filePath, ios::in | ios::binary | ios::app);
-	f.seekg(position);
+	f.open(filePath, ios::in | ios::binary);
 	// Chuyển con trỏ file tới cuối file
+	if (!f.is_open()) {
+		cout << "cant open file" << endl;
+	}
 	f.seekg(0, ios::end);
 	// lấy độ dài của file
 	int flen = f.tellg();
@@ -129,8 +135,8 @@ void ClientHandleRequest::sendFile(char* fileName, int position)
 		int byteSend = byteRead + 8;
 		f.read(data, byteRead);
 		TLVPackage pakage(DATA_STREAM, id, byteSend, data);
-			sent += byteRead;
-		if (sent == flen) {
+		sent += byteRead;
+		if (sent >= flen) {
 			// Nếu đã đọc hết file => gửi gói tin với cờ 201;
 			pakage.setTitle(DATA_STREAM_END);
 		}
@@ -165,4 +171,9 @@ void ClientHandleRequest::setId(int Id)
 int ClientHandleRequest::getId()
 {
 	return id;
+}
+
+void ClientHandleRequest::setSocket(SOCKET clientS)
+{
+	s = clientS;
 }

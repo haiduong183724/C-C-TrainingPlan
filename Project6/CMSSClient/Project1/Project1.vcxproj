@@ -22,6 +22,7 @@
     <ClInclude Include="ClientHandleRequest.h" />
     <ClInclude Include="DateTime.h" />
     <ClInclude Include="Directory.h" />
+    <ClInclude Include="FileChangeLog.h" />
     <ClInclude Include="FileInfomation.h" />
     <ClInclude Include="ReportChange.h" />
     <ClInclude Include="TLVBuffer.h" />
@@ -32,6 +33,7 @@
     <ClCompile Include="ClientMonitor.cpp" />
     <ClCompile Include="DateTime.cpp" />
     <ClCompile Include="Directory.cpp" />
+    <ClCompile Include="FileChangeLog.cpp" />
     <ClCompile Include="FileInfomation.cpp" />
     <ClCompile Include="ReportChange.cpp" />
     <ClCompile Include="TLVBuffer.cpp" />

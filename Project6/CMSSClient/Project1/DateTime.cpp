@@ -97,6 +97,10 @@ DateTime DateTime::Now()
     Nowdate.second = timeinfo->tm_sec;
     return Nowdate;
 }
+int DateTime::operator-(DateTime d)
+{
+    return hour*3600 + minute*60 + second - d.hour*3600 - d.minute * 60 - d.second;
+}
 using namespace std;
 
 //int main()

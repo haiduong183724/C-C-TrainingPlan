@@ -43,6 +43,7 @@ public:
 	/// </summary>
 	/// <returns>ngày giờ hiện tại</returns>
 	static DateTime Now();
+	int operator -(DateTime d);
 };
 
 #endif // !DATETIME_H

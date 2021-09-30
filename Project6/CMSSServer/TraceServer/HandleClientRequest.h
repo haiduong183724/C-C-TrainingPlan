@@ -3,6 +3,7 @@
 #include<vector>
 #include "TLVBuffer.h"
 #include"Client.h"
+#include<fstream>;
 #ifndef HANDLECLIENTREQUEST_H
 #define HANDLECLIENTREQUEST_H
 #define MAX_CLIENT 1024
@@ -10,10 +11,13 @@
 class HandleClientRequest
 {
 private:
-	std::vector<Client> clients;
 	HANDLE hmutex;
+	std::fstream file;
+	char repoPath[1024]{ 0 };
 	// trạng thái của đối tượng
 public:
+
+	std::vector<Client> clients;
 	/// <summary>
 	/// trạng thái làm việc của đối tượng
 	/// true: đang bận, không thể xử lý các y/c khác
@@ -103,6 +107,10 @@ public:
 	/// <param name="clientId">id của client đó</param>
 	/// <returns>một cắp gồm tên file và vị trí đã gửi </returns>
 	pair<string, int> getClientLog(int clientId);
+	
+	void setPath(char* path);
+
+	void closeFile();
 };
 
 #endif // !HANDLECLIENTREQUEST_H

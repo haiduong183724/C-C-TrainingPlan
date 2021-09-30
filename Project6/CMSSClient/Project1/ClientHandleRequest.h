@@ -4,6 +4,7 @@
 #include<WinSock2.h>
 #include<fstream>
 #include<io.h>
+#include"Directory.h"
 #include"TLVPackage.h"
 using namespace std;
 class ClientHandleRequest
@@ -14,6 +15,8 @@ private:
 	char path[1024];
 	int id = 0;
 public:
+	Directory* d;
+	ClientHandleRequest();
 	/// <summary>
 	/// Hàm khởi tạo
 	/// </summary>
@@ -68,6 +71,7 @@ public:
 
 	void setId(int Id);
 	int getId();
+	void setSocket(SOCKET s);
 };
 #endif // !CLIENTHANDLEREQUEST_H
 

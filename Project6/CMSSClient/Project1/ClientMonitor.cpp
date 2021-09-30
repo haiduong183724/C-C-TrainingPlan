@@ -10,14 +10,49 @@ using namespace std;
 mutex m;
 string addr, clientRepoPath;
 int port = 0;
-HANDLE ValidatedEvent, HandleRequest;
+TLVBuffer TLVBuff;
+char buff[1024]{ 0 };
+
+HANDLE ValidatedEvent;
 void CreateVaildateEvent() {
 	ValidatedEvent = CreateEventA(NULL, true, false, NULL);
 	if (ValidatedEvent == INVALID_HANDLE_VALUE) {
 		cout << "false to create event" << endl;
 	}
-	HandleRequest = CreateEventA(NULL, true, true, NULL);
 }
+void ConnectToServer(SOCKET* s, SOCKADDR_IN* caddr, int* id) {
+	int timeConnect = 0;
+	while (1) {
+		if (!SocketSendData::isConnect) {
+			int ret = connect(*s, (sockaddr*)caddr, sizeof(*caddr));
+			if (ret == 0) {
+				ClientHandleRequest hRequest(*s, "");
+				// xác minh đăng nhập
+				hRequest.login();
+				int byteRecv = recv(*s, buff, sizeof(buff), 0);
+				if (byteRecv > 0) {
+					TLVBuff.addData(buff, byteRecv);
+					TLVPackage p = TLVBuff.getPackage();
+					if (p.getTitle() == LOGIN_SUCESS) {
+						hRequest.handleResponse(p.getValue());
+						*id = p.getId();
+						SocketSendData::isConnect = true;
+						timeConnect++;
+						if (timeConnect > 1) {
+							// gửi yêu cầu đồng bộ dữ liệu với server
+						}
+						break;
+					}
+					else {
+						hRequest.handleResponse(p.getValue());
+					}
+				}
+			}
+			
+		}
+	}
+}
+
 void readConfig() {
 	fstream file("config.txt", ios::in || ios::out);
 	// đọc các cấu hình trong file cấu hình
@@ -44,26 +79,16 @@ void readConfig() {
 		}
 	}
 }
-SOCKET createSocket(char* addr, int port) {
-	SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	SOCKADDR_IN saddr;
-	saddr.sin_family = AF_INET;
-	saddr.sin_addr.S_un.S_addr = inet_addr(addr);
-	saddr.sin_port = htons(port);
-	connect(s, (sockaddr*)&saddr, sizeof(saddr));
-	return s;
-}
 void monitorDirectory(Directory* d)
 {
 	WaitForSingleObject(ValidatedEvent, INFINITE);
-	d->settingFile();
 	cout << "start follow" <<d->getPath()<< endl;
 	while (1) {
 		m.lock();
-		d->traceDirectory();// kiểm tra trạng thái thư mục
 		d->traceFile();// kiểm tra trạng thái các file
+		d->traceDirectory();// kiểm tra trạng thái thư mục
 		m.unlock();
-		Sleep(50);
+		Sleep(1000);
 	}
 }
 int main() {
@@ -74,64 +99,52 @@ int main() {
 	WSADATA DATA;
 	WSAStartup(MAKEWORD(2, 2), &DATA);
 	HANDLE hMutex = CreateMutexA(NULL, false, NULL);
-	SOCKET s = createSocket((char*)addr.c_str(), port);
-	// khởi tạo thư mục cần giám sát
-	Directory d(clientRepoPath.c_str());
-	// tạo thread để giám sát thư mục
-	thread monitorThread(monitorDirectory, &d);
+	SOCKET s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	SOCKADDR_IN saddr;
+	saddr.sin_family = AF_INET;
+	saddr.sin_addr.S_un.S_addr = inet_addr(addr.c_str());
+	saddr.sin_port = htons(port);
 	int id = -1;
-	// tạo thread để gửi các thay đổi tới server
-	thread getChangeThread(ReportChange(), &d,s, &hMutex, &id);
+	// tạo thread để giám sát thư mục
 	ClientHandleRequest hRequest(s, clientRepoPath.c_str());
-	TLVBuffer TLVBuff;
-	char buff[1024]{ 0 };
+	thread monitorThread(monitorDirectory, hRequest.d);
+	thread conectServerThread(ConnectToServer, &s, &saddr, &id);
+	hRequest.d->clear();
+	// tạo thread để gửi các thay đổi tới server
+	thread getChangeThread(ReportChange(), hRequest.d ,s, &hMutex, &id);
 	// Gửi tài khoảng, mật khẩu tới cho client
-	while (1) {
-		// xác minh đăng nhập
-		hRequest.login();
-		int byteRecv = recv(s, buff, sizeof(buff), 0);
-		TLVBuff.addData(buff, byteRecv);
-		TLVPackage p = TLVBuff.getPackage();
-		if (p.getTitle() == LOGIN_SUCESS) {
-			SetEvent(ValidatedEvent);
-			hRequest.handleResponse(p.getValue());
-			id = p.getId();
-			break;
-		}
-		else {
-			hRequest.handleResponse(p.getValue());
-		}
-	}
 	// Nhận các request của server
 	while (1) {
-		// Nhận các request
-		int byteRecv = recv(s, buff, sizeof(buff), 0);
-		ResetEvent(HandleRequest);
-		if (byteRecv < 0) {
-			break;
-		}
-		TLVBuff.addData(buff, byteRecv);
-		TLVPackage p = TLVBuff.getPackage();
-		hRequest.setId(p.getId());
-		while (p.getTitle() != INVALID_MESSAGE) {
-			// gói tin thông báo
-			if (p.getTitle() == NOTIFY_MESSAGE) {
-				hRequest.handleResponse(p.getValue());
+		if (SocketSendData::isConnect) {
+			int byteRecv = recv(s, buff, sizeof(buff), 0);
+			if (byteRecv < 0) {
+				break;
 			}
-			// gói tin nghiệp vụ
-			else if (p.getTitle() == CONTROL_MESSAGE) {
-				hRequest.handleResponse2(p.getValue());
-			}
-			// gói tin dữ liệu
-			else {
-				hRequest.handleData(p.getValue(), p.getLength() - 8);
-				if (p.getTitle() == DATA_STREAM_END) {
-					hRequest.closeFile();
+			TLVBuff.addData(buff, byteRecv);
+			TLVPackage p = TLVBuff.getPackage();
+			hRequest.setId(p.getId());
+			while (p.getTitle() != INVALID_MESSAGE) {
+				// gói tin thông báo
+				if (p.getTitle() == NOTIFY_MESSAGE) {
+					hRequest.handleResponse(p.getValue());
 				}
+				// gói tin nghiệp vụ
+				else if (p.getTitle() == CONTROL_MESSAGE) {
+					hRequest.handleResponse2(p.getValue());
+				}
+				else if (p.getTitle() == INVALID_MESSAGE) {
+					SetEvent(ValidatedEvent);
+				}
+				// gói tin dữ liệu
+				else {
+					hRequest.handleData(p.getValue(), p.getLength() - 8);
+					if (p.getTitle() == DATA_STREAM_END) {
+						hRequest.closeFile();
+					}
+				}
+				p = TLVBuff.getPackage();
 			}
-			p = TLVBuff.getPackage();
 		}
-		SetEvent(HandleRequest);
 	}
 	monitorThread.join();
 	getChangeThread.join();
