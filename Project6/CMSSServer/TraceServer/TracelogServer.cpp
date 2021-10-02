@@ -31,6 +31,8 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 					sHandle.rqBuffer.addData(p.packageValue(), p.getLength());
 					g_mtx.unlock();
 				}
+				else if(p.getTitle() == NO_CONTENT_PACKET){
+				}
 				else {
 					// nếu không thì sẽ sử lý gói tin
 					sHandle.HandlePacket(p);

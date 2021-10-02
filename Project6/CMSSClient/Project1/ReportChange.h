@@ -1,15 +1,15 @@
 #pragma once
 #ifndef REPORTCHANGE_H
 #define REPORTCHANGE_H
-#include"Directory.h"
+#include"ClientHandleRequest.h"
 class ReportChange
 {
 private:
 	SOCKET c;
 	int id = 0;
 public:
-	void operator ()(Directory* d, SOCKET s, HANDLE* hMutex, int* Id);
-	int SendReport(FileInfomation fOld,FileInfomation fNew , FileStatus s);
+	void operator ()(ClientHandleRequest* hRequest, HANDLE* hMutex);
+	int SendReport(char* fOld,char* fNew , FileStatus s);
 };
 #endif // !REPORTCHANGE_H
 

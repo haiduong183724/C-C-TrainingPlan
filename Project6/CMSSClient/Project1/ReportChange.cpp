@@ -1,36 +1,45 @@
 ﻿#include "ReportChange.h"
 #include <iostream>
 #include"TLVPackage.h"
-void ReportChange::operator()(Directory* d, SOCKET s, HANDLE* hMutex, int* Id)
+void ReportChange::operator()(ClientHandleRequest* hRequest, HANDLE* hMutex)
 {
-	c = s;
 	while (1) {
-		if (*Id != -1) {
-			id = *Id;
+		if (hRequest->isConnect) {
+			c = hRequest->getSocket();
+			id = hRequest->getId();
 			int send = 0;
 			WaitForSingleObject(hMutex, INFINITE);
-			while (!d->listFileChange.empty()) {
+			while (!hRequest->d->listFileChange.empty()) {
 				send = 0;
-				pair<FileInfomation, FileStatus> file = d->listFileChange.back();
-				d->listFileChange.pop_back();
+				FileChangeLog file = hRequest->d->listFileChange.back();
+				hRequest->d->listFileChange.pop_back();
 				// Kiểm tra có phải rename file hay không
-				if (file.second == FILE_ADD) {
-					if (!d->listFileChange.empty()) {
-						if (d->listFileChange.back().second == FILE_DELETE) {
-							pair<FileInfomation, FileStatus> file2 = d->listFileChange.back();
-							d->listFileChange.pop_back();
-							send = SendReport(file2.first, file.first, FILE_RENAME);
+				if (file.status == FILE_ADD) {
+					if (!hRequest->d->listFileChange.empty()) {
+						if (hRequest->d->listFileChange.back().status == FILE_DELETE) {
+							FileChangeLog file2 = hRequest->d->listFileChange.back();
+							hRequest->d->listFileChange.pop_back();
+							send = SendReport(file2.fileName, file.fileName, FILE_RENAME);
 							if (send < 0) {// disconnect
-								d->listFileChange.push_back(file2);
-								d->listFileChange.push_back(file);
+								hRequest->d->listFileChange.push_back(file2);
+								hRequest->d->listFileChange.push_back(file);
+								hRequest->isConnect = false;
+								break;
 							}
 							goto endloop;
 						}
 					}
 				}
-				send = SendReport(file.first, file.first, file.second);
-				if (send < 0) {// disconnect
-					d->listFileChange.push_back(file);
+				if (DateTime::Now() - file.timeChange > 2) {
+					send = SendReport(file.fileName, file.fileName, file.status);
+					if (send < 0) {// disconnect
+						hRequest->d->listFileChange.push_back(file);
+						hRequest->isConnect = false;
+						break;
+					}
+				}
+				else {
+					hRequest->d->listFileChange.push_back(file);
 				}
 			endloop:;
 			}
@@ -40,29 +49,29 @@ void ReportChange::operator()(Directory* d, SOCKET s, HANDLE* hMutex, int* Id)
 	}
 }
 
-int ReportChange::SendReport(FileInfomation fOld, FileInfomation fNew, FileStatus s)
+int ReportChange::SendReport(char* fOld, char* fNew, FileStatus s)
 {
 	char request[1024]{ 0 };
 	switch (s)
 	{
 	case FILE_DELETE:
 	{
-		sprintf(request, "%s %s", "DELETE", fOld.getFileName());
+		sprintf(request, "%s %s", "DELETE", fOld);
 		break;
 	}
 	case FILE_EDIT:
 	{
-		sprintf(request, "%s %s", "EDIT", fOld.getFileName());
+		sprintf(request, "%s %s", "EDIT", fOld);
 		break;
 	}
 	case FILE_ADD:
 	{
-		sprintf(request, "%s %s", "ADD", fOld.getFileName());
+		sprintf(request, "%s %s", "ADD", fOld);
 		break;
 	}
 	case FILE_RENAME:
 	{
-		sprintf(request, "%s %s %s", "RENAME", fOld.getFileName(), fNew.getFileName());
+		sprintf(request, "%s %s %s", "RENAME", fOld, fNew);
 		break;
 	}
 	default:
@@ -70,6 +79,5 @@ int ReportChange::SendReport(FileInfomation fOld, FileInfomation fNew, FileStatu
 	}
 	cout << request << endl;
 	TLVPackage p(CONTROL_MESSAGE, id, strlen(request) + 8, request);
-	int byteSend = send(c, p.packageValue(), p.getLength(), 0);
-	return byteSend;
+	return send(c, p.packageValue(), p.getLength(), 0);
 }

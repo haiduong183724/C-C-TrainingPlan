@@ -2,12 +2,18 @@
 #include<iostream>
 using namespace std;
 
+ClientHandleRequest::ClientHandleRequest()
+{
+	isConnect = false;
+}
+
 ClientHandleRequest::ClientHandleRequest(SOCKET clientS, const char* Path)
 {
 	memset(path, 0, sizeof(path));
 	s = clientS;
 	strcat(path, Path);
 	d = new Directory(path);
+	isConnect = false;
 }
 
 void ClientHandleRequest::handleResponse(char* response)
@@ -176,4 +182,15 @@ int ClientHandleRequest::getId()
 void ClientHandleRequest::setSocket(SOCKET clientS)
 {
 	s = clientS;
+}
+
+void ClientHandleRequest::setPath(const char* Path)
+{
+	strcat(path, Path);
+	d = new Directory(Path);
+}
+
+SOCKET ClientHandleRequest::getSocket()
+{
+	return s;
 }

@@ -1,4 +1,5 @@
 ﻿#include "Directory.h"
+using namespace std;
 
 Directory::Directory() {
 
@@ -88,7 +89,16 @@ void Directory::traceDirectory()
 }
 void Directory::logFile(FileInfomation f, FileStatus fstatus)
 {
-	listFileChange.push_back(make_pair(f, fstatus));
+	if (fstatus == FILE_EDIT) {
+		for (int i = 0; i < listFileChange.size(); i++) {
+			if (strcmp(listFileChange[i].fileName, f.getFileName()) == 0) {
+				if (listFileChange[i].status == FILE_ADD || listFileChange[i].status == FILE_EDIT) {
+					listFileChange.erase(listFileChange.begin() + i);
+				}
+			}
+		}
+	}
+	listFileChange.insert(listFileChange.begin(), FileChangeLog::getOb(f.getFileName(), fstatus));
 	/*switch (fstatus)
 	{
 	case FILE_DELETE: 
@@ -146,11 +156,3 @@ void Directory::clear()
 //	return 0;
 //}
 
-int SocketSendData::sendData(SOCKET s, const char* buff, int len)
-{
-	int res = send(s, buff, len, 0);
-	if (res < 0) {
-		isConnect = false;
-	}
-	return res;
-}

@@ -17,6 +17,7 @@ private:
 public:
 	Directory* d;
 	ClientHandleRequest();
+	bool isConnect;
 	/// <summary>
 	/// Hàm khởi tạo
 	/// </summary>
@@ -72,6 +73,8 @@ public:
 	void setId(int Id);
 	int getId();
 	void setSocket(SOCKET s);
+	void setPath(const char* path);
+	SOCKET getSocket();
 };
 #endif // !CLIENTHANDLEREQUEST_H
 

@@ -86,6 +86,10 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 	{
 		Continue(from);
 	}
+	case 'S':// yêu cầu đồng bộ với server
+	{
+		Synchronize(from);
+	}
 	default:
 		break;
 	}
@@ -267,6 +271,82 @@ void HandleClientRequest::closeFile()
 {
 	file.close();
 	state = false;
+}
+
+void HandleClientRequest::Synchronize(int clientId)
+{
+	WIN32_FIND_DATAA FindData;
+	HANDLE hFile = FindFirstFileA("Repo\\*.*", &FindData);
+	if (hFile != INVALID_HANDLE_VALUE) {
+		int num = 0;
+		SOCKET s = getClient(clientId).socket;
+		// duyệt lần lượt các file trong thư mục
+		while (FindNextFileA(hFile, &FindData)) {
+			char filePath[1024]{ 0 };
+			if (num > 0) {// bỏ qua file đầu tiên vì nó không có ý nghĩa
+				sprintf(filePath, "%s\\%s", "Repo", FindData.cFileName);
+				char request[1024]{ 0 };
+				sprintf(request, "%s %s %d", "ADD", FindData.cFileName, 0);
+				TLVPackage p(CONTROL_MESSAGE, clientId, strlen(request) + 8, request);
+				char note[1024]{ 0 };
+				sprintf(note, "Synchronizing file %s ",FindData.cFileName);
+				TLVPackage p2(NOTIFY_MESSAGE, clientId, strlen(note) + 8, note);
+				send(s, p2.packageValue(), p2.getLength(), 0);
+				send(s, p.packageValue(), p.getLength(), 0);
+				SendFile(FindData.cFileName, clientId);
+			}
+			num++;
+		}
+		TLVPackage p(NO_CONTENT_PACKET, clientId, 8, (char*)"");
+		send(s, p.packageValue(), p.getLength(), 0);
+	}
+	state = false;
+}
+
+void HandleClientRequest::SendFile(char* fileName, int ClientId)
+{
+	fstream f;
+	// mở file
+	char filePath[1024];
+	memset(filePath, 0, sizeof(filePath));
+	sprintf(filePath, "%s\\%s", "Repo", fileName);
+	f.open(filePath, ios::in | ios::binary);
+	// Chuyển con trỏ file tới cuối file
+	if (!f.is_open()) {
+		cout << "cant open file" << endl;
+	}
+	f.seekg(0, ios::end);
+	// lấy độ dài của file
+	int flen = f.tellg();
+	// chuyển con trỏ file về đầu
+	f.seekg(0, ios::beg);
+	// biến đếm số byte đọc được
+	int sent = 0;
+	// Biến lưu dữ liệu đọc được
+	char data[1016];
+	// Đọc lần lượt file
+	char buffer[1024];
+	SOCKET s = getClient(ClientId).socket;
+	while (sent < flen) {
+		memset(data, 0, sizeof(data));
+		// Số byte đọc từ file
+		int byteRead = min(1016, flen - sent);
+		// Số byte gửi
+		int byteSend = byteRead + 8;
+		f.read(data, byteRead);
+		TLVPackage pakage(DATA_STREAM, ClientId, byteSend, data);
+		sent += byteRead;
+		if (sent >= flen) {
+			// Nếu đã đọc hết file => gửi gói tin với cờ 201;
+			pakage.setTitle(DATA_STREAM_END);
+		}
+		memset(pakage.packageValue(), 0, sizeof(buffer));
+		memcpy(buffer, pakage.packageValue(), byteSend);
+		
+		send(s, buffer, byteSend, 0);
+	}
+	f.close();
+
 }
 
 

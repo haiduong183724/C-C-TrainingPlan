@@ -111,6 +111,10 @@ public:
 	void setPath(char* path);
 
 	void closeFile();
+
+	void Synchronize(int ClientId);
+
+	void SendFile(char* fileName, int ClientId);
 };
 
 #endif // !HANDLECLIENTREQUEST_H

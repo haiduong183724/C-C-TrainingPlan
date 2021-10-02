@@ -4,18 +4,8 @@
 #include<fstream>
 #include<vector>
 #include "FileInfomation.h"
+#include"FileChangeLog.h"
 using namespace std;
-enum FileStatus
-{
-FILE_DELETE = 1,// file xóa
-FILE_EDIT = 2,// file chỉnh sửa
-FILE_ADD = 3,// file thêm mới
-FILE_RENAME = 4// đổi tên file
-};
-namespace SocketSendData {
-	bool isConnect = false;
-	int sendData(SOCKET s, const char* buff, int len);
-}
 class Directory
 {
 private: 
@@ -28,7 +18,7 @@ private:
 	void checkFile(vector<FileInfomation> delList, vector<FileInfomation> addList);
 public:
 	vector<FileInfomation> listFile;// danh sách các file có trong thư mục
-	vector<pair<FileInfomation, FileStatus>> listFileChange;// danh sách các kết quả giám sát thu được
+	vector<FileChangeLog> listFileChange;// danh sách các kết quả giám sát thu được
 	Directory(const char* path);
 	Directory();
 	char* getPath();
