@@ -12,34 +12,31 @@ void ReportChange::operator()(ClientHandleRequest* hRequest, HANDLE* hMutex)
 			while (!hRequest->d->listFileChange.empty()) {
 				send = 0;
 				FileChangeLog file = hRequest->d->listFileChange.back();
-				hRequest->d->listFileChange.pop_back();
-				// Kiểm tra có phải rename file hay không
-				if (file.status == FILE_ADD) {
-					if (!hRequest->d->listFileChange.empty()) {
-						if (hRequest->d->listFileChange.back().status == FILE_DELETE) {
-							FileChangeLog file2 = hRequest->d->listFileChange.back();
-							hRequest->d->listFileChange.pop_back();
-							send = SendReport(file2.fileName, file.fileName, FILE_RENAME);
-							if (send < 0) {// disconnect
-								hRequest->d->listFileChange.push_back(file2);
-								hRequest->d->listFileChange.push_back(file);
-								hRequest->isConnect = false;
-								break;
+				if (DateTime::Now() - file.timeChange >= 2) {
+					hRequest->d->listFileChange.pop_back();
+					// Kiểm tra có phải rename file hay không
+					if (file.status == FILE_ADD) {
+						if (!hRequest->d->listFileChange.empty()) {
+							if (hRequest->d->listFileChange.back().status == FILE_DELETE) {
+								FileChangeLog file2 = hRequest->d->listFileChange.back();
+								hRequest->d->listFileChange.pop_back();
+								send = SendReport(file2.fileName, file.fileName, FILE_RENAME);
+								if (send < 0) {// disconnect
+									hRequest->d->listFileChange.push_back(file2);
+									hRequest->d->listFileChange.push_back(file);
+									hRequest->isConnect = false;
+									break;
+								}
+								goto endloop;
 							}
-							goto endloop;
 						}
 					}
-				}
-				if (DateTime::Now() - file.timeChange > 2) {
 					send = SendReport(file.fileName, file.fileName, file.status);
 					if (send < 0) {// disconnect
 						hRequest->d->listFileChange.push_back(file);
 						hRequest->isConnect = false;
 						break;
 					}
-				}
-				else {
-					hRequest->d->listFileChange.push_back(file);
 				}
 			endloop:;
 			}

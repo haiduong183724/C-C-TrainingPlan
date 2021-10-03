@@ -84,23 +84,19 @@ public:
 	/// </summary>
 	/// <param name="filePath">tên file</param>
 	/// <param name="from">id của client</param>
-	void Add(char* filePath, int from);
+	void Add(const char* filePath, int from);
 	/// <summary>
 	/// Xử lý yêu cầu đổi tên
 	/// </summary>
 	/// <param name="filePath"> nội dung gửi</param>
 	/// <param name="from">id của client gửi tới</param>
-	void Rename(char* filePath, int from);
+	void Rename(const char* filePath, int from);
 	/// <summary>
 	/// xử lý yêu cầu chỉnh sửa một file
 	/// </summary>
 	/// <param name="filePath">tên file chỉnh sửa</param>
 	/// <param name="from">id của client gửi</param>
-	void Edit(char* filePath, int from);
-	/// <summary>
-	/// Tiếp tục gửi dữ liệu khi bị mất két nối
-	/// </summary>
-	void Continue(int clientId);
+	void Edit(const char* filePath, int from);
 	/// <summary>
 	/// lấy trạng thái hoạt động của một client
 	/// </summary>

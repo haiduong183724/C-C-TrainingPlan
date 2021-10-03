@@ -91,10 +91,11 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 			if (c.status.second != Client::FREE) {
 				// log lại vị trí đã gửi được
 				sHandle.logs.push_back(c.getStatus());
+				TLVPackage p(DATA_STREAM_END, id, 8, (char*)"");
+				sHandle.HandleData(p, id);
+				sHandle.state = false;
 			}
 			// gưi một gói tin rỗng để client đóng file đang mở để ghi.
-			TLVPackage p(DATA_STREAM_END, id, 8, (char*)"");
-			sHandle.HandleData(p, id);
 			sHandle.removeClient(id);
 			break;
 		}

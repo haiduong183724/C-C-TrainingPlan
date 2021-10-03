@@ -34,7 +34,7 @@ void Client::changeStatus(std::string fileName, int sendingPosition)
 std::string Client::getStatus()
 {
     char logs[1024]{ 0 };
-    sprintf(logs, "%s %s %d", inet_ntoa(caddr.sin_addr), status.first, status.second);
+    sprintf(logs, "%s %s %d", inet_ntoa(caddr.sin_addr), status.first.c_str(), status.second);
     std::string s = logs;
     return s;
 }

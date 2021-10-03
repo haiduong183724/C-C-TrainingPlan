@@ -60,6 +60,10 @@ void ClientHandleRequest::handleResponse2(char* response)
 			sscanf(response + strlen(rq) + 1,"%s%s", oldName, newName);
 			renameFile(oldName, newName);
 		}
+		case 'C':
+		{
+			d->clear();
+		}
 	}
 }
 

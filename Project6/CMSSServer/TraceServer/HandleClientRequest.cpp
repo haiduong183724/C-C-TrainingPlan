@@ -82,10 +82,6 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 		Rename(rq + strlen(request) + 1, from);
 		break;
 	}
-	case 'C':// yêu cầu tiếp tục gửi dữ liệu lên
-	{
-		Continue(from);
-	}
 	case 'S':// yêu cầu đồng bộ với server
 	{
 		Synchronize(from);
@@ -118,8 +114,11 @@ void HandleClientRequest::HandleData(TLVPackage p, int from)
 			else {
 				//Client chưa truyền xong
 				clients[i].changeStatus(filePath, position + p.getLength() - 8);
-
 			}
+		}
+		if (p.getTitle() == 0) {
+			TLVPackage p(NO_CONTENT_PACKET, from, 8, (char*)"");
+			send(clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 	}
 	if (p.getTitle() == 0) {
@@ -145,7 +144,7 @@ void HandleClientRequest::Delete(char* fileName, int from)
 	state = false;
 }
 
-void HandleClientRequest::Add(char* fileName, int from)
+void HandleClientRequest::Add(const char* fileName, int from)
 {
 	// thông báo các client khác mở file
 	vector<Client> Clients = clients;
@@ -164,12 +163,12 @@ void HandleClientRequest::Add(char* fileName, int from)
 			sprintf(request, "%s %s", "GET", fileName);
 			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
-			clients[i].changeStatus(filePath, 0);
+			clients[i].changeStatus(fileName, 0);
 		}
 	}
 }
 
-void HandleClientRequest::Rename(char* filePath, int from)
+void HandleClientRequest::Rename(const char* filePath, int from)
 {
 	// tách lấy nội dung tên file cũ và tên file đổi
 	vector<Client> Clients = clients;
@@ -191,7 +190,7 @@ void HandleClientRequest::Rename(char* filePath, int from)
 	state = false;
 }
 
-void HandleClientRequest::Edit(char* fileName, int from)
+void HandleClientRequest::Edit(const char* fileName, int from)
 {
 	// thông báo cho các client khác mở file để nhận dữ liệu
 	char filePath[1024]{ 0 };
@@ -211,38 +210,11 @@ void HandleClientRequest::Edit(char* fileName, int from)
 			sprintf(request, "%s %s", "GET", fileName);
 			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
-			clients[i].changeStatus(filePath, 0);
+			clients[i].changeStatus(fileName, 0);
 		}
 	}
 	
 	
-}
-
-void HandleClientRequest::Continue(int id)
-{
-	// lấy trạng thái logs của client
-	pair<string, int> log = getClientLog(id);
-	char filePath[1024]{ 0 };
-	sprintf(filePath, "%s\\%s", repoPath, log.first);
-	file.open(filePath, ios::out | ios::app);
-	file.seekg(log.second);
-	for (int i = 0; i < clients.size(); i++) {
-		if (clients[i].getId() != id) {
-			char request[1024]{ 0 };
-			// gửi thông báo cho các client khác mở file lên và ghi tiếp vào cuối file
-			sprintf(request, "%s %s %d", "ADD", log.first, log.second);
-			TLVPackage p(CONTROL_MESSAGE, clients[i].getId(), strlen(request) + 8, request);
-			send(clients[i].socket, p.packageValue(), p.getLength(), 0);
-		}
-		else {
-			// yêu cầu client from gửi tiếp nội dung file từ vị trí log.second lên 
-			char request[1024]{ 0 };
-			sprintf(request, "%s %s %d", "GET", log.first, log.second);
-			TLVPackage p(CONTROL_MESSAGE, id, strlen(request) + 8, request);
-			send(clients[i].socket, p.packageValue(), p.getLength(), 0);
-			clients[i].changeStatus(log.first, log.second);
-		}
-	}
 }
 
 pair<string, int> HandleClientRequest::getClientLog(int clientId)
@@ -259,6 +231,7 @@ pair<string, int> HandleClientRequest::getClientLog(int clientId)
 			return make_pair(filePath, atoi(position));
 		}
 	}
+	return make_pair("no file match", -1);
 }
 
 void HandleClientRequest::setPath(char* path)
@@ -275,30 +248,38 @@ void HandleClientRequest::closeFile()
 
 void HandleClientRequest::Synchronize(int clientId)
 {
-	WIN32_FIND_DATAA FindData;
-	HANDLE hFile = FindFirstFileA("Repo\\*.*", &FindData);
-	if (hFile != INVALID_HANDLE_VALUE) {
-		int num = 0;
-		SOCKET s = getClient(clientId).socket;
-		// duyệt lần lượt các file trong thư mục
-		while (FindNextFileA(hFile, &FindData)) {
-			char filePath[1024]{ 0 };
-			if (num > 0) {// bỏ qua file đầu tiên vì nó không có ý nghĩa
-				sprintf(filePath, "%s\\%s", "Repo", FindData.cFileName);
-				char request[1024]{ 0 };
-				sprintf(request, "%s %s %d", "ADD", FindData.cFileName, 0);
-				TLVPackage p(CONTROL_MESSAGE, clientId, strlen(request) + 8, request);
-				char note[1024]{ 0 };
-				sprintf(note, "Synchronizing file %s ",FindData.cFileName);
-				TLVPackage p2(NOTIFY_MESSAGE, clientId, strlen(note) + 8, note);
-				send(s, p2.packageValue(), p2.getLength(), 0);
-				send(s, p.packageValue(), p.getLength(), 0);
-				SendFile(FindData.cFileName, clientId);
+	pair<string, int> log = getClientLog(clientId);
+	SOCKET s = getClient(clientId).socket;
+	if (log.second != -1) {
+		Add(log.first.c_str(), clientId);
+	}
+	else {
+		TLVPackage pk(CONTROL_MESSAGE, clientId, 9, (char*)"C");
+		send(s, pk.packageValue(), pk.getLength(), 0);
+		WIN32_FIND_DATAA FindData;
+		HANDLE hFile = FindFirstFileA("Repo\\*.*", &FindData);
+		if (hFile != INVALID_HANDLE_VALUE) {
+			int num = 0;
+			// duyệt lần lượt các file trong thư mục
+			while (FindNextFileA(hFile, &FindData)) {
+				char filePath[1024]{ 0 };
+				if (num > 0) {// bỏ qua file đầu tiên vì nó không có ý nghĩa
+					sprintf(filePath, "%s\\%s", "Repo", FindData.cFileName);
+					char request[1024]{ 0 };
+					sprintf(request, "%s %s %d", "ADD", FindData.cFileName, 0);
+					TLVPackage p(CONTROL_MESSAGE, clientId, strlen(request) + 8, request);
+					char note[1024]{ 0 };
+					sprintf(note, "Synchronizing file %s ", FindData.cFileName);
+					TLVPackage p2(NOTIFY_MESSAGE, clientId, strlen(note) + 8, note);
+					send(s, p2.packageValue(), p2.getLength(), 0);
+					send(s, p.packageValue(), p.getLength(), 0);
+					SendFile(FindData.cFileName, clientId);
+				}
+				num++;
 			}
-			num++;
+			TLVPackage p(NO_CONTENT_PACKET, clientId, 8, (char*)"");
+			send(s, p.packageValue(), p.getLength(), 0);
 		}
-		TLVPackage p(NO_CONTENT_PACKET, clientId, 8, (char*)"");
-		send(s, p.packageValue(), p.getLength(), 0);
 	}
 	state = false;
 }

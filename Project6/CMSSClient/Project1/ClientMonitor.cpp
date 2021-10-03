@@ -60,7 +60,6 @@ void ConnectToServer(SOCKADDR_IN caddr) {
 							if (timeConnect == 1) {
 								// gửi yêu cầu đồng bộ dữ liệu với server
 								TLVPackage pk(CONTROL_MESSAGE, p.getId(), 9, (char*)"S");
-								hRequest.d->clear();
 								int b = send(hRequest.getSocket(), pk.packageValue(), pk.getLength(), 0);
 							}
 							break;
@@ -131,7 +130,6 @@ int main() {
 	thread conectServerThread(ConnectToServer, saddr);
 	thread checkConnectThread(checkConnect);
 	hRequest.setPath(clientRepoPath.c_str());
-	hRequest.d->clear();
 	// tạo thread để gửi các thay đổi tới server
 	thread getChangeThread(ReportChange(), &hRequest, &hMutex);
 	// Gửi tài khoảng, mật khẩu tới cho client
