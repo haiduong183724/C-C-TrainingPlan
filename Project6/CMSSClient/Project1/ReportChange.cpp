@@ -81,7 +81,7 @@ int ReportChange::SendReport(char* fOld, char* fNew, FileStatus s)
 		d.dateStr(), request);
 	fstream f;
 	f.open((char*)"log.txt", ios::out | ios::app);
-	f.seekg(ios::beg, 0);
+	f.seekp(0);
 	// ghi lại các chỉnh sửa để theo dõi
 	f.write(log, strlen(log));
 	TLVPackage p(CONTROL_MESSAGE, id, strlen(request) + 8, request);
