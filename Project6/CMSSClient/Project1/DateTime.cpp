@@ -101,6 +101,13 @@ int DateTime::operator-(DateTime d)
 {
     return hour*3600 + minute*60 + second - d.hour*3600 - d.minute * 60 - d.second;
 }
+char* DateTime::dateStr()
+{
+    char log[1024]{ 0 };
+    sprintf(log, "%d:%d:%d - %d-%d-%d",
+        hour, minute, second, day, month, year);
+    return log;
+}
 using namespace std;
 
 //int main()

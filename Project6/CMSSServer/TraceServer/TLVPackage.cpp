@@ -45,13 +45,13 @@ int TLVPackage::getTitle()
 
 TLVPackage::TLVPackage(char* package)
 {
-    char Length[4];
-    char Title[2];
-    char Id[2];
+    char Length[4]{ 0 };
+    char Title[2]{ 0 };
+    char Id[2]{ 0 };
     // Khởi tạo value
     memcpy(Length, package + 4, 4);
     memcpy(Title, package, 2);
-    memcpy(Id, package+2, 2);
+    memcpy(Id, package + 2, 2);
     memset(value, 0, sizeof(value));
     id = Common::byteToShortIn(Id);
     title = Common::byteToShortIn(Title);

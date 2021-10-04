@@ -4,8 +4,10 @@
 #include<WinSock2.h>
 #include<fstream>
 #include<io.h>
+#include<chrono>
 #include"Directory.h"
 #include"TLVPackage.h"
+#include<thread>
 using namespace std;
 class ClientHandleRequest
 {

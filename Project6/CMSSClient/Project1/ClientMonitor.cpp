@@ -105,11 +105,12 @@ void monitorDirectory()
 	WaitForSingleObject(ValidatedEvent, INFINITE);
 	cout << "start follow" <<hRequest.d->getPath()<< endl;
 	while (1) {
+		WaitForSingleObject(ValidatedEvent, INFINITE);
 		m.lock();
 		hRequest.d->traceFile();// kiểm tra trạng thái các file
 		hRequest.d->traceDirectory();// kiểm tra trạng thái thư mục
 		m.unlock();
-		Sleep(10);
+		Sleep(1000);
 	}
 }
 int main() {
@@ -149,6 +150,7 @@ int main() {
 					}
 					// gói tin nghiệp vụ
 					else if (p.getTitle() == CONTROL_MESSAGE) {
+						ResetEvent(ValidatedEvent);
 						hRequest.handleResponse2(p.getValue());
 					}
 					else if (p.getTitle() == NO_CONTENT_PACKET) {

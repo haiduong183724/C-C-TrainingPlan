@@ -82,6 +82,13 @@ DateTime::DateTime(std::string dateString)
         second = date[5];
     }
 }
+char* DateTime::dateStr()
+{
+    char log[1024]{ 0 };
+    sprintf(log, "%d:%d:%d - %d-%d-%d",
+        hour, minute, second, day, month, year);
+    return log;
+}
 DateTime DateTime::Now()
 {
     time_t rawtime;

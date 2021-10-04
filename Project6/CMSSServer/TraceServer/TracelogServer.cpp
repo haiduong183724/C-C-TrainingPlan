@@ -26,7 +26,6 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 				//và gói tin là gói tin nghiệp vụ, 
 				//gói tin này sẽ được đưa xuống cuối buffer để xử lý sau khi hết bận
 				if (p.getTitle() == CONTROL_MESSAGE && sHandle.state == true) {
-					// tim hieu auto lock
 					g_mtx.lock();
 					sHandle.rqBuffer.addData(p.packageValue(), p.getLength());
 					g_mtx.unlock();
@@ -36,6 +35,7 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 				else {
 					// nếu không thì sẽ sử lý gói tin
 					sHandle.HandlePacket(p);
+					SetEvent(bufferFullEvent);
 				}
 				g_mtx.lock();
 				p = sHandle.rqBuffer.getPackage();
@@ -53,8 +53,7 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 		int byteRecv = recv(client.socket, buff, sizeof(buff), 0);
 		if (byteRecv > 0) {
 			if (isClient) {// nếu đã xác thực thì đưa gói tin vào TLV buffer để đối tượng HandleClientRequest xử lý
-				
-				while (true) {
+				while (true && byteRecv > 8) {
 					WaitForSingleObject(bufferFullEvent, INFINITE);
 					g_mtx.lock();
 					bool s = sHandle.rqBuffer.addData(buff, byteRecv);
@@ -102,8 +101,6 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 	}
 	return 0;
 }
-
-
 int main() {
 	WSADATA data;
 	// tạo socket lắng nghe kết nối

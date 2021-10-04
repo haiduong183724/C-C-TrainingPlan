@@ -124,6 +124,8 @@ void ClientHandleRequest::sendFile(char* fileName, int position)
 	f.open(filePath, ios::in | ios::binary);
 	// Chuyển con trỏ file tới cuối file
 	if (!f.is_open()) {
+		TLVPackage pakage(DATA_STREAM_END, id, 8, (char*)"");
+		send(s, pakage.packageValue(), 8, 0);
 		cout << "cant open file" << endl;
 	}
 	f.seekg(0, ios::end);
@@ -152,7 +154,15 @@ void ClientHandleRequest::sendFile(char* fileName, int position)
 		}
 		memset(pakage.packageValue(), 0, sizeof(buffer));
 		memcpy(buffer, pakage.packageValue(), byteSend);
-		send(s, buffer, byteSend, 0);
+		int byteSent = send(s, buffer, byteSend, 0);
+		while (byteSent < byteSend) {
+			int sent = send(s, buffer + byteSend, byteSend - byteSent, 0);
+			byteSent += sent;
+		}
+	}
+	if (flen == 0) {
+		TLVPackage pakage(DATA_STREAM_END, id, 8, (char*)"");
+		send(s, pakage.packageValue(), 8, 0);
 	}
 	f.close();
 }

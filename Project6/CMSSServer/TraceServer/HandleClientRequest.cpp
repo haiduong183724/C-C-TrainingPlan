@@ -22,14 +22,13 @@ void HandleClientRequest::removeClient(int clientId)
 			break;
 		}
 	}
+	ReleaseMutex(hmutex);
 }
 
 Client HandleClientRequest::getClient(int clientId)
 {
-	WaitForSingleObject(hmutex, INFINITE);
 	for (int i = 0; i < clients.size(); i++) {
 		if (clients[i].getId() == clientId) {
-			ReleaseMutex(hmutex);
 			return clients[i];
 		}
 	}
@@ -53,8 +52,8 @@ void HandleClientRequest::HandleRequest(char* rq, int from)
 	sscanf(rq, "%s%s", request, ctn);
 	char log[1024]{ 0 };
 	DateTime d = DateTime::Now();
-	sprintf(log, "%d-%d-%d-%d-%d-%d: %s\n",
-		d.year, d.month, d.day, d.hour, d.minute, d.second, rq);
+	sprintf(log, "%s : %s\n",
+		d.dateStr(), rq);
 	fstream f;
 	f.open((char*)"log.txt", ios::out | ios::app);
 	// ghi lại các chỉnh sửa để theo dõi
@@ -116,7 +115,7 @@ void HandleClientRequest::HandleData(TLVPackage p, int from)
 				clients[i].changeStatus(filePath, position + p.getLength() - 8);
 			}
 		}
-		if (p.getTitle() == 0) {
+		if (p.getTitle() == DATA_STREAM_END) {
 			TLVPackage p(NO_CONTENT_PACKET, from, 8, (char*)"");
 			send(clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
@@ -139,6 +138,8 @@ void HandleClientRequest::Delete(char* fileName, int from)
 			sprintf(request, "%s %s", "DELETE", fileName);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
+			TLVPackage p1(NO_CONTENT_PACKET, Clients[i].getId(), 8, (char*)"");
+			send(Clients[i].socket, p1.packageValue(), p1.getLength(), 0);
 		}
 	}
 	state = false;
@@ -164,6 +165,8 @@ void HandleClientRequest::Add(const char* fileName, int from)
 			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 			clients[i].changeStatus(fileName, 0);
+			TLVPackage p1(NO_CONTENT_PACKET, Clients[i].getId(), 8, (char*)"");
+			send(clients[i].socket, p1.packageValue(), p1.getLength(), 0);
 		}
 	}
 }
@@ -185,6 +188,8 @@ void HandleClientRequest::Rename(const char* filePath, int from)
 			sprintf(request, "%s %s %s", "RENAME", oldName, newName);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
+			TLVPackage p1(NO_CONTENT_PACKET, from, 8, (char*)"");
+			send(clients[i].socket, p1.packageValue(), p1.getLength(), 0);
 		}
 	}
 	state = false;
@@ -211,6 +216,8 @@ void HandleClientRequest::Edit(const char* fileName, int from)
 			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 			clients[i].changeStatus(fileName, 0);
+			TLVPackage p1(NO_CONTENT_PACKET, from, 8, (char*)"");
+			send(clients[i].socket, p1.packageValue(), p1.getLength(), 0);
 		}
 	}
 	
@@ -286,6 +293,7 @@ void HandleClientRequest::Synchronize(int clientId)
 
 void HandleClientRequest::SendFile(char* fileName, int ClientId)
 {
+	SOCKET s = getClient(ClientId).socket;
 	fstream f;
 	// mở file
 	char filePath[1024];
@@ -294,7 +302,11 @@ void HandleClientRequest::SendFile(char* fileName, int ClientId)
 	f.open(filePath, ios::in | ios::binary);
 	// Chuyển con trỏ file tới cuối file
 	if (!f.is_open()) {
-		cout << "cant open file" << endl;
+		if (!f.is_open()) {
+			TLVPackage pakage(DATA_STREAM_END, ClientId, 8, (char*)"");
+			send(s, pakage.packageValue(), 8, 0);
+			cout << "cant open file" << endl;
+		}
 	}
 	f.seekg(0, ios::end);
 	// lấy độ dài của file
@@ -307,7 +319,6 @@ void HandleClientRequest::SendFile(char* fileName, int ClientId)
 	char data[1016];
 	// Đọc lần lượt file
 	char buffer[1024];
-	SOCKET s = getClient(ClientId).socket;
 	while (sent < flen) {
 		memset(data, 0, sizeof(data));
 		// Số byte đọc từ file
@@ -321,10 +332,14 @@ void HandleClientRequest::SendFile(char* fileName, int ClientId)
 			// Nếu đã đọc hết file => gửi gói tin với cờ 201;
 			pakage.setTitle(DATA_STREAM_END);
 		}
-		memset(pakage.packageValue(), 0, sizeof(buffer));
+		memset(buffer, 0, sizeof(buffer));
 		memcpy(buffer, pakage.packageValue(), byteSend);
 		
 		send(s, buffer, byteSend, 0);
+	}
+	if (flen == 0) {
+		TLVPackage pakage(DATA_STREAM_END, ClientId, 8, (char*)"");
+		send(s, pakage.packageValue(), 8, 0);
 	}
 	f.close();
 

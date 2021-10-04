@@ -15,12 +15,12 @@ void ReportChange::operator()(ClientHandleRequest* hRequest, HANDLE* hMutex)
 				if (DateTime::Now() - file.timeChange >= 2) {
 					hRequest->d->listFileChange.pop_back();
 					// Kiểm tra có phải rename file hay không
-					if (file.status == FILE_ADD) {
+					if (file.status == FILE_DELETE) {
 						if (!hRequest->d->listFileChange.empty()) {
-							if (hRequest->d->listFileChange.back().status == FILE_DELETE) {
+							if (hRequest->d->listFileChange.back().status == FILE_ADD) {
 								FileChangeLog file2 = hRequest->d->listFileChange.back();
 								hRequest->d->listFileChange.pop_back();
-								send = SendReport(file2.fileName, file.fileName, FILE_RENAME);
+								send = SendReport(file.fileName, file2.fileName, FILE_RENAME);
 								if (send < 0) {// disconnect
 									hRequest->d->listFileChange.push_back(file2);
 									hRequest->d->listFileChange.push_back(file);
@@ -75,6 +75,15 @@ int ReportChange::SendReport(char* fOld, char* fNew, FileStatus s)
 		break;
 	}
 	cout << request << endl;
+	char log[1024]{ 0 };
+	DateTime d = DateTime::Now();
+	sprintf(log, "%s : %s\n",
+		d.dateStr(), request);
+	fstream f;
+	f.open((char*)"log.txt", ios::out | ios::app);
+	f.seekg(ios::beg, 0);
+	// ghi lại các chỉnh sửa để theo dõi
+	f.write(log, strlen(log));
 	TLVPackage p(CONTROL_MESSAGE, id, strlen(request) + 8, request);
 	return send(c, p.packageValue(), p.getLength(), 0);
 }

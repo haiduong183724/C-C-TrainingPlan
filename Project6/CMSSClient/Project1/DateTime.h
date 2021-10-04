@@ -44,6 +44,8 @@ public:
 	/// <returns>ngày giờ hiện tại</returns>
 	static DateTime Now();
 	int operator -(DateTime d);
+
+	char* dateStr();
 };
 
 #endif // !DATETIME_H

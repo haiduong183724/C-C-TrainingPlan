@@ -11,7 +11,6 @@ TLVPackage TLVBuffer::getPackage()
 	const int MSG_TYPE_EMPTY = -1;
 	TLVPackage p;
 	p.setTitle(INVALID_MESSAGE);
-	
 	// Kiểm tra độ dài của luồng dữ liệu để xác nhận nó có là một TLV package hay không
 	if (buffLen < 8) {
 		return p;
@@ -33,9 +32,12 @@ TLVPackage TLVBuffer::getPackage()
 			return p;
 		}
 		else {
+			if (length == 0) {
+				printf("err");
+			}
 			// Khởi tạo đối tượng TLVPackage
 			memcpy(Value, buff + 8, length - 8);
-			TLVPackage package(title,id, length, Value);
+			TLVPackage package(title , id, length, Value);
 			// Dịch các dữ liệu còn lại trong package về đầu
 			memcpy(buff, buff + length, buffLen - length);
 			memset(buff + buffLen - length, 0, length);
@@ -54,7 +56,6 @@ bool TLVBuffer::addData(char* data, int len)
 	}
 	// Thêm dữ liệu vào cuối buff
 	memcpy(buff + buffLen, data, len);
-	
 	//Sửa lại độ dài
 	buffLen += len;
 	return true;

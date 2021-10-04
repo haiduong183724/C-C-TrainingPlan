@@ -20,6 +20,7 @@ public:
 	bool operator >(DateTime date);
 	bool operator == (DateTime date);
 	DateTime(std::string dateString);
+	char* dateStr();
 	static DateTime Now();
 };
 

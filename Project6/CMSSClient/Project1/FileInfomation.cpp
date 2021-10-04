@@ -38,7 +38,6 @@ FileInfomation::FileInfomation(const char* filePath, int s)
     }
     fileStatus = s;
 }
-
 bool FileInfomation::updateFile()
 {
     WIN32_FIND_DATAA FindData;
