@@ -14,12 +14,16 @@ TLVBuffer TLVBuff;
 ClientHandleRequest hRequest;
 HANDLE ValidatedEvent;
 
+inline bool exists_test(const std::string& name) {
+	struct stat buffer;
+	return (stat(name.c_str(), &buffer) == 0);
+}
 void checkConnect() {
 	while (true) {
 		if (hRequest.isConnect) {
 			m.lock();
 			TLVPackage p(NO_CONTENT_PACKET, hRequest.getId(), 8, (char*)"");
-			int ret = send(hRequest.getSocket(), p.packageValue(), p.getLength(), 0);
+			int ret = send(hRequest.getSocket(),"", 0, 0);
 			if (ret < 0) {
 				hRequest.isConnect = false;
 			}
@@ -36,7 +40,6 @@ void CreateVaildateEvent() {
 	}
 }
 void ConnectToServer(SOCKADDR_IN caddr) {
-	int timeConnect = 0;
 	while (1) {
 		if (!hRequest.isConnect) {
 			SOCKADDR_IN serverAddr = caddr;
@@ -56,11 +59,14 @@ void ConnectToServer(SOCKADDR_IN caddr) {
 							hRequest.handleResponse(p.getValue());
 							hRequest.isConnect = true;
 							hRequest.setId(p.getId());
-							timeConnect++;
-							if (timeConnect == 1) {
+							if (!exists_test("list_file.txt")) {
 								// gửi yêu cầu đồng bộ dữ liệu với server
 								TLVPackage pk(CONTROL_MESSAGE, p.getId(), 9, (char*)"S");
 								int b = send(hRequest.getSocket(), pk.packageValue(), pk.getLength(), 0);
+							}
+							else {
+								hRequest.d->readFileListSave();
+								SetEvent(ValidatedEvent);
 							}
 							break;
 						}
@@ -155,7 +161,6 @@ int main() {
 					}
 					else if (p.getTitle() == NO_CONTENT_PACKET) {
 						hRequest.d->listFile = hRequest.d->settingFile();
-						Sleep(1000);
 						SetEvent(ValidatedEvent);
 					}
 					 //gói tin dữ liệu

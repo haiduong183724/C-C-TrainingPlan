@@ -46,6 +46,10 @@ public:
 	void addFile(FileInfomation fileAdded);
 
 	void clear();
+
+	char* getLog();
+
+	void readFileListSave();
 };
 
 #endif // !DIRECTORY_H

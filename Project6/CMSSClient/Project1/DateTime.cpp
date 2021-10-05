@@ -9,7 +9,7 @@ void DateTime::setDate(SYSTEMTIME st)
     year = st.wYear;
     month = st.wMonth;
     day = st.wDay;
-    hour = st.wHour;
+    hour = st.wHour + 7;
     minute = st.wMinute;
     second = st.wSecond;
 }
@@ -74,12 +74,12 @@ DateTime::DateTime(std::string dateString)
         if (num != 0) {
             date[index] = num;
         }
-        year = date[0];
-        month = date[1];
-        day = date[2];
-        hour = date[3];
-        minute = date[4];
-        second = date[5];
+        hour = date[0];
+        minute = date[1];
+        second = date[2];
+        day = date[3];
+        month = date[4];
+        year = date[5];
     }
 }
 DateTime DateTime::Now()
@@ -104,7 +104,7 @@ int DateTime::operator-(DateTime d)
 char* DateTime::dateStr()
 {
     char log[1024]{ 0 };
-    sprintf(log, "%d:%d:%d - %d-%d-%d",
+    sprintf(log, "%d:%d:%d-%d-%d-%d",
         hour, minute, second, day, month, year);
     return log;
 }

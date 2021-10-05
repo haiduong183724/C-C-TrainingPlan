@@ -18,9 +18,12 @@ public:
 	int fileStatus = FILE_NOR;
 	FileInfomation(const char* filePath);
 	FileInfomation(const char* filePath, int state);
+	FileInfomation(const char* filePath,const char* fileName, DateTime ModifiedDate);
 	bool updateFile();
 	char* getFileName();
 	bool operator == (FileInfomation f);
+		
+	DateTime getModifiedDate();
 };
 #endif // !FILEINFOMATION_H
 

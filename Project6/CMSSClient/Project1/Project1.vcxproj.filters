@@ -39,6 +39,9 @@
     <ClInclude Include="FileChangeLog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DBConnector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Directory.cpp">
@@ -66,6 +69,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="FileChangeLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DBConnector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

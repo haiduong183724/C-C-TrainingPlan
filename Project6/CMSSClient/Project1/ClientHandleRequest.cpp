@@ -121,6 +121,7 @@ void ClientHandleRequest::sendFile(char* fileName, int position)
 	char filePath[1024];
 	memset(filePath, 0, sizeof(filePath));
 	sprintf(filePath, "%s\\%s", path, fileName);
+	cout << "sending file " << fileName << endl;
 	f.open(filePath, ios::in | ios::binary);
 	// Chuyển con trỏ file tới cuối file
 	if (!f.is_open()) {
@@ -155,6 +156,12 @@ void ClientHandleRequest::sendFile(char* fileName, int position)
 		memset(pakage.packageValue(), 0, sizeof(buffer));
 		memcpy(buffer, pakage.packageValue(), byteSend);
 		int byteSent = send(s, buffer, byteSend, 0);
+		if (byteSent < 0) {
+			isConnect = false;
+			FileInfomation nFile(filePath);
+			d->logFile(nFile, FILE_ADD);
+			break;
+		}
 		while (byteSent < byteSend) {
 			int sent = send(s, buffer + byteSend, byteSend - byteSent, 0);
 			byteSent += sent;

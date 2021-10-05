@@ -5,7 +5,7 @@
 /// <summary>
 /// Chứa các gói tin TLV 
 /// </summary>
-#define BUFFER_SIZE 200000
+#define BUFFER_SIZE 500000
 class TLVBuffer
 {
 private:

@@ -32,7 +32,7 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 				}
 				else if(p.getTitle() == NO_CONTENT_PACKET){
 				}
-				else {
+				else{
 					// nếu không thì sẽ sử lý gói tin
 					sHandle.HandlePacket(p);
 					SetEvent(bufferFullEvent);
@@ -53,7 +53,7 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 		int byteRecv = recv(client.socket, buff, sizeof(buff), 0);
 		if (byteRecv > 0) {
 			if (isClient) {// nếu đã xác thực thì đưa gói tin vào TLV buffer để đối tượng HandleClientRequest xử lý
-				while (true && byteRecv > 8) {
+				while (true && byteRecv >= 8) {
 					WaitForSingleObject(bufferFullEvent, INFINITE);
 					g_mtx.lock();
 					bool s = sHandle.rqBuffer.addData(buff, byteRecv);

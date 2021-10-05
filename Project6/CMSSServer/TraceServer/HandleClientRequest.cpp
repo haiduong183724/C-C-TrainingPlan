@@ -36,7 +36,6 @@ Client HandleClientRequest::getClient(int clientId)
 
 void HandleClientRequest::HandlePacket(TLVPackage p)
 {
-	state = true;
 	if (p.getTitle() == CONTROL_MESSAGE) {// title = 100 => gói tin nghiệp vụ
 		HandleRequest(p.getValue(), p.getId());
 	}
@@ -47,6 +46,7 @@ void HandleClientRequest::HandlePacket(TLVPackage p)
 
 void HandleClientRequest::HandleRequest(char* rq, int from)
 {
+	state = true;
 	char request[1024]{ 0 }, ctn[1024]{ 0 };
 	// tách request để lấy được yêu vầu
 	sscanf(rq, "%s%s", request, ctn);
@@ -104,20 +104,20 @@ void HandleClientRequest::HandleData(TLVPackage p, int from)
 			send(Clients[i].socket, dataSend, p.getLength(), 0);
 		}
 		else{
-			string filePath = clients[i].status.first;
-			int position = clients[i].status.second;
+			string filePath = Clients[i].status.first;
+			int position = Clients[i].status.second;
 			if (p.getTitle() == DATA_STREAM_END) {
 				//client đã truyền xong
-				clients[i].changeStatus("", Client::FREE);
+				Clients[i].changeStatus("", Client::FREE);
 			}
 			else {
 				//Client chưa truyền xong
-				clients[i].changeStatus(filePath, position + p.getLength() - 8);
+				Clients[i].changeStatus(filePath, position + p.getLength() - 8);
 			}
 		}
 		if (p.getTitle() == DATA_STREAM_END) {
 			TLVPackage p(NO_CONTENT_PACKET, from, 8, (char*)"");
-			send(clients[i].socket, p.packageValue(), p.getLength(), 0);
+			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
 	}
 	if (p.getTitle() == 0) {
@@ -166,7 +166,7 @@ void HandleClientRequest::Add(const char* fileName, int from)
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 			clients[i].changeStatus(fileName, 0);
 			TLVPackage p1(NO_CONTENT_PACKET, Clients[i].getId(), 8, (char*)"");
-			send(clients[i].socket, p1.packageValue(), p1.getLength(), 0);
+			send(Clients[i].socket, p1.packageValue(), p1.getLength(), 0);
 		}
 	}
 }

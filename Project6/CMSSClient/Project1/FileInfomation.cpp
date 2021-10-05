@@ -38,6 +38,12 @@ FileInfomation::FileInfomation(const char* filePath, int s)
     }
     fileStatus = s;
 }
+FileInfomation::FileInfomation(const char* filePath,const char* FileName, DateTime ModifiedDate)
+{
+    strcat(path, filePath);
+    modifiedDate = ModifiedDate;
+    strcat(fileName, FileName);
+}
 bool FileInfomation::updateFile()
 {
     WIN32_FIND_DATAA FindData;
@@ -66,6 +72,10 @@ bool FileInfomation::operator==(FileInfomation f)
         return true;
     }
     return false;
+}
+DateTime FileInfomation::getModifiedDate()
+{
+    return modifiedDate;
 }
 #include<iostream>
 using namespace std;

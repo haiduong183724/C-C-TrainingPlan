@@ -72,13 +72,13 @@ void Directory::checkFile(vector<FileInfomation> delList, vector<FileInfomation>
 	}
 	// các file còn lại ở danh sách cũ là các file đã bị xóa hoặc sửa tên
 	for (int i = 0; i < delList.size(); i++) {
-		logFile(delList[i], FILE_DELETE);
 		delFile(delList[i]);
+		logFile(delList[i], FILE_DELETE);
 	}
 	// các file còn lại ở danh sách mới là các file được thêm hoặc đổi tên
 	for (int i = 0; i < addList.size(); i++) {
-		logFile(addList[i], FILE_ADD);
 		listFile.push_back(addList[i]);
+		logFile(addList[i], FILE_ADD);
 	}
 }
 void Directory::traceDirectory()
@@ -89,6 +89,12 @@ void Directory::traceDirectory()
 }
 void Directory::logFile(FileInfomation f, FileStatus fstatus)
 {
+	fstream logFile;
+	logFile.open("list_file.txt", ios::out);
+	char logs[1024]{ 0 };
+	strcat(logs, getLog());
+	logFile << logs;
+	logFile.close();
 	if (fstatus == FILE_EDIT) {
 		for (int i = 0; i < listFileChange.size(); i++) {
 			if (strcmp(listFileChange[i].fileName, f.getFileName()) == 0) {
@@ -144,6 +150,34 @@ void Directory::clear()
 		remove(filePath);
 	}
 	listFile.clear();
+}
+char* Directory::getLog()
+{
+	char logs[1024]{ 0 };
+	for (int i = 0; i < listFile.size(); i++) {
+		char log[1024]{ 0 };
+		sprintf(log, "%s %s\n", listFile[i].getFileName(), listFile[i].getModifiedDate().dateStr());
+		strcat(logs, log);
+	}
+	return logs;
+}
+void Directory::readFileListSave()
+{
+	listFile.clear();
+	fstream logFile;
+	logFile.open("list_file.txt", ios::in);
+	while (!logFile.eof()) {
+		char logs[1024]{ 0 }, fileName[1024]{ 0 }, dateStr[1024]{ 0 };
+		logFile.getline(logs, sizeof(logs));
+		sscanf(logs, "%s%s", fileName, dateStr);
+		if (strlen(fileName) > 0 && strlen(dateStr) > 0) {
+			DateTime modifiedDate(dateStr);
+			char filePath[1024]{ 0 };
+			sprintf(filePath, "%s\\%s", directoryPath, fileName);
+			FileInfomation f(filePath,fileName, modifiedDate);
+			listFile.push_back(f);
+		}
+	}
 }
 //#include<iostream>
 //int main() {
