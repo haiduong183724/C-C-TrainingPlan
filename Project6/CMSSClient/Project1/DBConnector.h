@@ -21,9 +21,10 @@ private:
 public:
 	DBConnector(char* tableName);
 	void AddFile(FileInfomation fileAdd);
-	void Delete(FileInfomation fileDel);
-	void Rename(FileInfomation oldFile, FileInfomation newFile);
+	void Delete(char* fileDel);
+	void Rename(char* oldFile, char* newFile);
 	void Edit(FileInfomation fildEdit);
+	void ResetDb();
 };
 #endif // !DBCONNECTOR_H
 

@@ -8,6 +8,7 @@ class Client
 private:
 	int id;
 public:
+	bool isValidate = false;
 	SOCKADDR_IN caddr;
 	static const int FREE = -1;
 	std::pair<std::string, int> status;

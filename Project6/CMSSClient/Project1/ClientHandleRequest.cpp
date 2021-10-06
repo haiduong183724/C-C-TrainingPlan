@@ -59,10 +59,12 @@ void ClientHandleRequest::handleResponse2(char* response)
 			char oldName[1024]{ 0 }, newName[1024]{};
 			sscanf(response + strlen(rq) + 1,"%s%s", oldName, newName);
 			renameFile(oldName, newName);
+			break;
 		}
 		case 'C':
 		{
 			d->clear();
+			break;
 		}
 	}
 }
@@ -98,7 +100,7 @@ void ClientHandleRequest::openFile(char* fileName, int filePositon)
 	else {// tạo file mới
 		f.open(filePath, ios::out | ios::binary);
 	}
-	FileInfomation newFile(fileName);
+	FileInfomation newFile(filePath);
 	d->addFile(newFile);
 	if (!f.is_open()) {
 		cout << "can'nt open file!" << endl;
@@ -159,6 +161,7 @@ void ClientHandleRequest::sendFile(char* fileName, int position)
 		if (byteSent < 0) {
 			isConnect = false;
 			FileInfomation nFile(filePath);
+			closeFile();
 			d->logFile(nFile, FILE_ADD);
 			break;
 		}
@@ -179,12 +182,6 @@ void ClientHandleRequest::deleteFile(char* fileName)
 	char fullPath[1024]{0};
 	sprintf(fullPath, "%s\\%s", path, fileName);
 	remove(fullPath);
-	fstream logFile;
-	logFile.open("list_file.txt", ios::out);
-	char logs[1024]{ 0 };
-	strcat(logs, d->getLog());
-	logFile << logs;
-	logFile.close();
 }
 
 void ClientHandleRequest::renameFile(char* oldName, char* newName)
@@ -194,12 +191,6 @@ void ClientHandleRequest::renameFile(char* oldName, char* newName)
 	sprintf(oldFullPath, "%s\\%s", path, oldName);
 	sprintf(newFullPath, "%s\\%s", path, newName);
 	int ret = rename(oldFullPath, newFullPath);
-	fstream logFile;
-	logFile.open("list_file.txt", ios::out);
-	char logs[1024]{ 0 };
-	strcat(logs, d->getLog());
-	logFile << logs;
-	logFile.close();
 }
 
 void ClientHandleRequest::setId(int Id)
@@ -217,10 +208,11 @@ void ClientHandleRequest::setSocket(SOCKET clientS)
 	s = clientS;
 }
 
-void ClientHandleRequest::setPath(const char* Path)
+void ClientHandleRequest::setPath(const char* Path, const char* tableName)
 {
 	strcat(path, Path);
 	d = new Directory(Path);
+	d->Connector = new DBConnector((char*)tableName);
 }
 
 SOCKET ClientHandleRequest::getSocket()

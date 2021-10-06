@@ -47,6 +47,7 @@ void Directory::traceFile()
 		if (listFile[i].fileStatus == FILE_NOR) {
 			if (listFile[i].updateFile()) {
 				logFile(listFile[i], FILE_EDIT);
+				Connector->Edit(listFile[i]);
 			}
 		}
 	}
@@ -78,6 +79,7 @@ void Directory::checkFile(vector<FileInfomation> delList, vector<FileInfomation>
 	// các file còn lại ở danh sách mới là các file được thêm hoặc đổi tên
 	for (int i = 0; i < addList.size(); i++) {
 		listFile.push_back(addList[i]);
+		Connector->AddFile(addList[i]);
 		logFile(addList[i], FILE_ADD);
 	}
 }
@@ -134,22 +136,26 @@ void Directory::delFile(FileInfomation fileDeleted)
 			sprintf(filePath, "%s\\%s", directoryPath, fileDeleted.getFileName());
 			remove(filePath);
 			listFile.erase(listFile.begin() + i);
+			Connector->Delete(fileDeleted.getFileName());
 		}
 	}
 }
 void Directory::addFile(FileInfomation fileAdded)
 {
+	Connector->AddFile(fileAdded);
 	delFile(fileAdded);
 	listFile.push_back(fileAdded);
 }
 void Directory::clear()
 {
+	listFile = settingFile();
 	for (int i = 0; i < listFile.size(); i++) {
 		char filePath[1024]{ 0 };
 		sprintf(filePath, "%s\\%s", directoryPath, listFile[i].getFileName());
 		remove(filePath);
 	}
 	listFile.clear();
+	Connector->ResetDb();
 }
 char* Directory::getLog()
 {

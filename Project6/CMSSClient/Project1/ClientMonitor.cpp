@@ -8,7 +8,7 @@
 #include <mutex>
 using namespace std;
 mutex m;
-string addr, clientRepoPath;
+string addr, clientRepoPath, TableName;
 int port = 0;
 TLVBuffer TLVBuff;
 ClientHandleRequest hRequest;
@@ -68,6 +68,9 @@ void ConnectToServer(SOCKADDR_IN caddr) {
 							hRequest.handleResponse(p.getValue());
 						}
 					}
+					else {
+						break;
+					}
 				}
 			}
 		}
@@ -96,6 +99,9 @@ void readConfig() {
 		// đường dẫn tới thư mục lưu trữ file của client
 		if (!strcmp(configName, "CLIENT_LOCATE")) {
 			clientRepoPath = configValue;
+		}
+		if (!strcmp(configName, "DATA_BASE")) {
+			TableName = configValue;
 		}
 	}
 }
@@ -129,7 +135,7 @@ int main() {
 	thread monitorThread(monitorDirectory);
 	thread conectServerThread(ConnectToServer, saddr);
 	thread checkConnectThread(checkConnect);
-	hRequest.setPath(clientRepoPath.c_str());
+	hRequest.setPath(clientRepoPath.c_str(), TableName.c_str());
 	// tạo thread để gửi các thay đổi tới server
 	thread getChangeThread(ReportChange(), &hRequest, &hMutex);
 	// Gửi tài khoảng, mật khẩu tới cho client
@@ -157,6 +163,12 @@ int main() {
 					}
 					else if (p.getTitle() == NO_CONTENT_PACKET) {
 						hRequest.d->listFile = hRequest.d->settingFile();
+						fstream logFile;
+						logFile.open("list_file.txt", ios::out);
+						char logs[1024]{ 0 };
+						strcat(logs, hRequest.d->getLog());
+						logFile << logs;
+						logFile.close();
 						SetEvent(ValidatedEvent);
 					}
 					 //gói tin dữ liệu

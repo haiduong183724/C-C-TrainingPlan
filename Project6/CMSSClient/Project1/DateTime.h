@@ -46,6 +46,9 @@ public:
 	int operator -(DateTime d);
 
 	char* dateStr();
+
+	char* sqlDateTimeStr();
+	char* sqlDateStr();
 };
 
 #endif // !DATETIME_H

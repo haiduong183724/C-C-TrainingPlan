@@ -108,6 +108,20 @@ char* DateTime::dateStr()
         hour, minute, second, day, month, year);
     return log;
 }
+char* DateTime::sqlDateTimeStr()
+{
+    char log[1024]{ 0 };
+    sprintf(log, "%d-%d-%d-%d-%d-%d",
+        year, month, day, hour , minute, second);
+    return log;
+}
+char* DateTime::sqlDateStr()
+{
+    char log[1024]{ 0 };
+    sprintf(log, "%d-%d-%d",
+        year, month, day);
+    return log;
+}
 using namespace std;
 
 //int main()

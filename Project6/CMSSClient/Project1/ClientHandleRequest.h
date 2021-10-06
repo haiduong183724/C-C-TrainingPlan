@@ -8,6 +8,7 @@
 #include"Directory.h"
 #include"TLVPackage.h"
 #include<thread>
+#include"DBConnector.h"
 using namespace std;
 class ClientHandleRequest
 {
@@ -75,7 +76,7 @@ public:
 	void setId(int Id);
 	int getId();
 	void setSocket(SOCKET s);
-	void setPath(const char* path);
+	void setPath(const char* path, const char* tableName);
 	SOCKET getSocket();
 };
 #endif // !CLIENTHANDLEREQUEST_H

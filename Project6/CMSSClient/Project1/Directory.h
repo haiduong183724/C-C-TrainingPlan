@@ -5,6 +5,7 @@
 #include<vector>
 #include "FileInfomation.h"
 #include"FileChangeLog.h"
+#include"DBConnector.h"
 using namespace std;
 class Directory
 {
@@ -17,6 +18,7 @@ private:
 	/// <param name="addList">danh sách các file đã cập nhật</param>
 	void checkFile(vector<FileInfomation> delList, vector<FileInfomation> addList);
 public:
+	DBConnector* Connector;
 	vector<FileInfomation> listFile;// danh sách các file có trong thư mục
 	vector<FileChangeLog> listFileChange;// danh sách các kết quả giám sát thu được
 	Directory(const char* path);

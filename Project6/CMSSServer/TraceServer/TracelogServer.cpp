@@ -21,7 +21,6 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 			g_mtx.lock();
 			// kiểm tra buffer có đủ gói tin TLV hay không
 			TLVPackage p = sHandle.rqBuffer.getPackage();
-			SetEvent(bufferFullEvent);
 			g_mtx.unlock();
 			while (p.getTitle() != -1) {
 				// nếu trạng thái của HandleClientRequest là đang bận,
@@ -50,23 +49,21 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 	}
 }
 DWORD WINAPI WaitClientEvent(LPVOID param){
-	int id = (int)param;// id của client
 	bool isClient = false;// tình trạng xác thực, true: đã xác thực, false: chưa
-	Client client = sHandle.getClient(id);
+	int id  = (int)param;
 	while (true) {
+		Client client = sHandle.getClient(id);
 		char buff[1024]{ 0 };
 		int byteRecv = recv(client.socket, buff, sizeof(buff), 0);
 		if (byteRecv > 0) {
 			if (isClient) {// nếu đã xác thực thì đưa gói tin vào TLV buffer để đối tượng HandleClientRequest xử lý
 				while (true && byteRecv >= 8) {
-					WaitForSingleObject(bufferFullEvent, INFINITE);
 					g_mtx.lock();
 					bool s = sHandle.rqBuffer.addData(buff, byteRecv);
 					if (s) {
 						g_mtx.unlock();
 						break;
 					}
-					ResetEvent(bufferFullEvent);
 					g_mtx.unlock();
 				}
 			}
@@ -85,7 +82,9 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 					TLVPackage p(LOGIN_SUCESS, id, 28, (char*)"account is correct!");
 					send(client.socket, p.packageValue(), p.getLength(), 0);
 					bool isSync = connector.AddClient(client);
+					sHandle.ValidateClient(id);
 					if (isSync) {
+						sHandle.state = true;
 						sHandle.Synchronize(client.getId());
 					}
 					else{
@@ -102,6 +101,8 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 			// nếu client này đang gửi file tới server
 			if (sHandle.state == true) {
 				connector.Disconnect(c, 0);
+				if(sHandle.clients.size() == 0)
+					sHandle.state = false;
 			}
 			else {
 				connector.Disconnect(c, 1);
@@ -143,8 +144,8 @@ int main() {
 		SOCKET c = accept(s, (sockaddr*)&caddr, &clen);
 		DWORD ID;
 		Client client(c, sHandle.numClient, caddr);
-		sHandle.addClient(client);
 		// tạo thread để lắng nghe các request từ client
+		sHandle.addClient(client);
 		CreateThread(NULL, 0, WaitClientEvent, (LPVOID)sHandle.numClient, 0, &ID);
 		sHandle.numClient += 1;
 	}

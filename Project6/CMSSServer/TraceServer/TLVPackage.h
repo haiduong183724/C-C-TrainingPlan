@@ -59,7 +59,9 @@ public:
     void setTitle(int Title);
 	// Thay đổi độ dài
     void setLength(int Length);
+	
 	void setId(int Id);
+	
 	int getId();
 };
 #endif // !TLVPAGKAGE_H

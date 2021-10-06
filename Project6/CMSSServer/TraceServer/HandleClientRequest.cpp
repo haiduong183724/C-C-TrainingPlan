@@ -97,13 +97,13 @@ void HandleClientRequest::HandleData(TLVPackage p, int from)
 	file.write(p.getValue(), pLen);
 	vector<Client> Clients = clients;
 	for (int i = 0; i < Clients.size(); i++) {
-		if (Clients[i].getId() != from) {
+		if (Clients[i].getId() != from && Clients[i].isValidate) {
 			p.setId(Clients[i].getId());
 			char dataSend[1024]{ 0 };
 			memcpy(dataSend, p.packageValue(), p.getLength());
 			send(Clients[i].socket, dataSend, p.getLength(), 0);
 		}
-		else{
+		else if (Clients[i].getId() == from){
 			string filePath = Clients[i].status.first;
 			int position = Clients[i].status.second;
 			if (p.getTitle() == DATA_STREAM_END) {
@@ -118,6 +118,7 @@ void HandleClientRequest::HandleData(TLVPackage p, int from)
 		if (p.getTitle() == DATA_STREAM_END) {
 			TLVPackage p(NO_CONTENT_PACKET, from, 8, (char*)"");
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
+			state = false;
 		}
 	}
 	if (p.getTitle() == 0) {
@@ -133,7 +134,7 @@ void HandleClientRequest::Delete(char* fileName, int from)
 	// gửi yêu cầu xóa file đến cho các client khác
 	vector<Client> Clients = clients;
 	for (int i = 0; i < Clients.size(); i++) {
-		if (Clients[i].getId() != from) {
+		if (Clients[i].getId() != from && Clients[i].isValidate) {
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s", "DELETE", fileName);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
@@ -153,13 +154,13 @@ void HandleClientRequest::Add(const char* fileName, int from)
 	sprintf(filePath, "%s\\%s", repoPath, fileName);
 	file.open(filePath, ios::out|ios::binary);
 	for (int i = 0; i < Clients.size(); i++) {
-		if (Clients[i].getId() != from) {
+		if (Clients[i].getId() != from && Clients[i].isValidate) {
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s %d", "ADD", fileName, 0);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
-		else {
+		else if(Clients[i].getId() == from){
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s", "GET", fileName);
 			TLVPackage p(CONTROL_MESSAGE, from, strlen(request) + 8, request);
@@ -183,7 +184,7 @@ void HandleClientRequest::Rename(const char* filePath, int from)
 	sprintf(newPath, "%s\\%s", repoPath, newName);
 	rename(oldPath, newPath);
 	for (int i = 0; i < Clients.size(); i++) {
-		if (Clients[i].getId() != from) {
+		if (Clients[i].getId() != from && Clients[i].isValidate) {
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s %s", "RENAME", oldName, newName);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
@@ -203,13 +204,13 @@ void HandleClientRequest::Edit(const char* fileName, int from)
 	file.open(filePath, ios::out| ios::binary);
 	vector<Client> Clients = clients;
 	for (int i = 0; i < Clients.size(); i++) {
-		if (Clients[i].getId() != from) {
+		if (Clients[i].getId() != from && Clients[i].isValidate)  {
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s %d", "ADD", fileName, 0);
 			TLVPackage p(CONTROL_MESSAGE, Clients[i].getId(), strlen(request) + 8, request);
 			send(Clients[i].socket, p.packageValue(), p.getLength(), 0);
 		}
-		else {
+		else if(Clients[i].getId() == from){
 			// yêu cầu client from gửi nội dung file lên 
 			char request[1024]{ 0 };
 			sprintf(request, "%s %s", "GET", fileName);
@@ -343,6 +344,15 @@ void HandleClientRequest::SendFile(char* fileName, int ClientId)
 	}
 	f.close();
 
+}
+
+void HandleClientRequest::ValidateClient(int clientId)
+{
+	for (int i = 0; i < clients.size(); i++) {
+		if (clients[i].getId() == clientId) {
+			clients[i].isValidate = true;
+		}
+	}
 }
 
 

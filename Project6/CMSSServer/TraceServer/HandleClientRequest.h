@@ -111,6 +111,8 @@ public:
 	void Synchronize(int ClientId);
 
 	void SendFile(char* fileName, int ClientId);
+
+	void ValidateClient(int id);
 };
 
 #endif // !HANDLECLIENTREQUEST_H
