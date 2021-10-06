@@ -3,10 +3,12 @@
 #include"Client.h"
 #include "HandleClientRequest.h"
 #include<mutex>
+#include"DBConnector.h"
 using namespace std;
 HandleClientRequest sHandle;
 mutex g_mtx;
 HANDLE bufferFullEvent;
+DBConnector connector;
 void CreateBufferEvent() {
 	bufferFullEvent = CreateEventA(NULL, true, true, NULL);
 }
@@ -36,6 +38,9 @@ DWORD WINAPI HandleClientRequests(LPVOID param) {
 					// nếu không thì sẽ sử lý gói tin
 					sHandle.HandlePacket(p);
 					SetEvent(bufferFullEvent);
+					if (p.getId() == CONTROL_MESSAGE) {
+						connector.ChangeUpdatedState();
+					}
 				}
 				g_mtx.lock();
 				p = sHandle.rqBuffer.getPackage();
@@ -79,6 +84,14 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 				else {// nếu đúng, gửi yêu cầu thành công
 					TLVPackage p(LOGIN_SUCESS, id, 28, (char*)"account is correct!");
 					send(client.socket, p.packageValue(), p.getLength(), 0);
+					bool isSync = connector.AddClient(client);
+					if (isSync) {
+						sHandle.Synchronize(client.getId());
+					}
+					else{
+						TLVPackage p(NO_SYNC, client.getId(), 8, (char*)"");
+						send(client.socket, p.packageValue(), p.getLength(), 0);
+					}
 				}
 			}
 		}
@@ -87,6 +100,12 @@ DWORD WINAPI WaitClientEvent(LPVOID param){
 			// kiểm tra trạng thái của client
 			Client c = sHandle.getClient(id);
 			// nếu client này đang gửi file tới server
+			if (sHandle.state == true) {
+				connector.Disconnect(c, 0);
+			}
+			else {
+				connector.Disconnect(c, 1);
+			}
 			if (c.status.second != Client::FREE) {
 				// log lại vị trí đã gửi được
 				sHandle.logs.push_back(c.getStatus());

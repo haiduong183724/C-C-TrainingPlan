@@ -13,6 +13,7 @@ enum MessageTitle
 	LOGIN_SUCESS = 200,
 	INVALID_MESSAGE = -1,
 	NO_CONTENT_PACKET = 201,
+	NO_SYNC = 202,
 };
 namespace Common
 {

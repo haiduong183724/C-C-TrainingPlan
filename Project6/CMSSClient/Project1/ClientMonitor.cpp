@@ -59,14 +59,8 @@ void ConnectToServer(SOCKADDR_IN caddr) {
 							hRequest.handleResponse(p.getValue());
 							hRequest.isConnect = true;
 							hRequest.setId(p.getId());
-							if (!exists_test("list_file.txt")) {
-								// gửi yêu cầu đồng bộ dữ liệu với server
-								TLVPackage pk(CONTROL_MESSAGE, p.getId(), 9, (char*)"S");
-								int b = send(hRequest.getSocket(), pk.packageValue(), pk.getLength(), 0);
-							}
-							else {
+							if (exists_test("list_file.txt")) {
 								hRequest.d->readFileListSave();
-								SetEvent(ValidatedEvent);
 							}
 							break;
 						}
@@ -79,7 +73,6 @@ void ConnectToServer(SOCKADDR_IN caddr) {
 		}
 	}
 }
-
 void readConfig() {
 	fstream file("config.txt", ios::in || ios::out);
 	// đọc các cấu hình trong file cấu hình
@@ -159,6 +152,9 @@ int main() {
 						ResetEvent(ValidatedEvent);
 						hRequest.handleResponse2(p.getValue());
 					}
+					else if (p.getTitle() == NO_SYNC) {
+						SetEvent(ValidatedEvent);
+					}
 					else if (p.getTitle() == NO_CONTENT_PACKET) {
 						hRequest.d->listFile = hRequest.d->settingFile();
 						SetEvent(ValidatedEvent);
@@ -167,6 +163,12 @@ int main() {
 					else {
 						hRequest.handleData(p.getValue(), p.getLength() - 8);
 						if (p.getTitle() == DATA_STREAM_END) {
+							fstream logFile;
+							logFile.open("list_file.txt", ios::out);
+							char logs[1024]{ 0 };
+							strcat(logs, hRequest.d->getLog());
+							logFile << logs;
+							logFile.close();
 							hRequest.closeFile();
 						}
 					}

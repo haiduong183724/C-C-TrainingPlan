@@ -179,6 +179,12 @@ void ClientHandleRequest::deleteFile(char* fileName)
 	char fullPath[1024]{0};
 	sprintf(fullPath, "%s\\%s", path, fileName);
 	remove(fullPath);
+	fstream logFile;
+	logFile.open("list_file.txt", ios::out);
+	char logs[1024]{ 0 };
+	strcat(logs, d->getLog());
+	logFile << logs;
+	logFile.close();
 }
 
 void ClientHandleRequest::renameFile(char* oldName, char* newName)
@@ -188,6 +194,12 @@ void ClientHandleRequest::renameFile(char* oldName, char* newName)
 	sprintf(oldFullPath, "%s\\%s", path, oldName);
 	sprintf(newFullPath, "%s\\%s", path, newName);
 	int ret = rename(oldFullPath, newFullPath);
+	fstream logFile;
+	logFile.open("list_file.txt", ios::out);
+	char logs[1024]{ 0 };
+	strcat(logs, d->getLog());
+	logFile << logs;
+	logFile.close();
 }
 
 void ClientHandleRequest::setId(int Id)

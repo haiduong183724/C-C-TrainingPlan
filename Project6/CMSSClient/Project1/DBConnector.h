@@ -9,17 +9,21 @@
 #include "cppconn/prepared_statement.h"
 #include "cppconn/metadata.h"
 #include "cppconn/exception.h"
-#define server "tcp://127.0.0.1:3306/bttuan"
+#include"FileInfomation.h"
+#define server "tcp://127.0.0.1:3306/cmss"
 #define user "root"
 #define pass "0matkhau"
 class DBConnector
 {
 private:
+	char tableName[1024]{ 0 };
 	sql::Connection* connection;
 public:
-	DBConnector();
-
-
+	DBConnector(char* tableName);
+	void AddFile(FileInfomation fileAdd);
+	void Delete(FileInfomation fileDel);
+	void Rename(FileInfomation oldFile, FileInfomation newFile);
+	void Edit(FileInfomation fildEdit);
 };
 #endif // !DBCONNECTOR_H
 
