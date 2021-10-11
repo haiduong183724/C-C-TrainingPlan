@@ -265,6 +265,9 @@ void HandleClientRequest::Synchronize(int clientId)
 		TLVPackage pk(CONTROL_MESSAGE, clientId, 9, (char*)"C");
 		send(s, pk.packageValue(), pk.getLength(), 0);
 		WIN32_FIND_DATAA FindData;
+		char* note = (char*)"Synchronizing...\n";
+		TLVPackage p2(NOTIFY_MESSAGE, clientId, strlen(note) + 8, note);
+		send(s, p2.packageValue(), p2.getLength(), 0);
 		HANDLE hFile = FindFirstFileA("Repo\\*.*", &FindData);
 		if (hFile != INVALID_HANDLE_VALUE) {
 			int num = 0;
@@ -276,10 +279,6 @@ void HandleClientRequest::Synchronize(int clientId)
 					char request[1024]{ 0 };
 					sprintf(request, "%s %s %d", "ADD", FindData.cFileName, 0);
 					TLVPackage p(CONTROL_MESSAGE, clientId, strlen(request) + 8, request);
-					char note[1024]{ 0 };
-					sprintf(note, "Synchronizing file %s ", FindData.cFileName);
-					TLVPackage p2(NOTIFY_MESSAGE, clientId, strlen(note) + 8, note);
-					send(s, p2.packageValue(), p2.getLength(), 0);
 					send(s, p.packageValue(), p.getLength(), 0);
 					SendFile(FindData.cFileName, clientId);
 				}
@@ -287,6 +286,9 @@ void HandleClientRequest::Synchronize(int clientId)
 			}
 			TLVPackage p(NO_CONTENT_PACKET, clientId, 8, (char*)"");
 			send(s, p.packageValue(), p.getLength(), 0);
+			char* note = (char*)"Done!...\n";
+			TLVPackage p2(NOTIFY_MESSAGE, clientId, strlen(note) + 8, note);
+			send(s, p2.packageValue(), p2.getLength(), 0);
 		}
 	}
 	state = false;
